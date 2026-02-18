@@ -15,6 +15,7 @@ import TreeMap from './components/TreeMap';
 import Overview from './components/Overview';
 import Footer from './components/Footer';
 import TimeComparison from './components/TimeComparison';
+import Revisions from "./components/Revisions";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -64,6 +65,7 @@ const App = () => (
               their labels changes the selected title to that article.
             </span>
           </Instruction>
+          <Revisions />
           <Heading text="Sources of Traffic" />
           <TreeMap />
           <Instruction className="paragraph">
