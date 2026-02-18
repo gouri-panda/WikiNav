@@ -17,6 +17,7 @@ import Footer from './components/Footer';
 import TimeComparison from './components/TimeComparison';
 import Revisions from "./components/Revisions";
 import PageViews from "./components/PageViews";
+import Wikipulse from "./components/Wikipulse";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -68,6 +69,7 @@ const App = () => (
           </Instruction>
           <Revisions />
           <PageViews />
+          <Wikipulse />
           <Heading text="Sources of Traffic" />
           <TreeMap />
           <Instruction className="paragraph">
