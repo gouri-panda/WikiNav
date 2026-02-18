@@ -16,6 +16,7 @@ import Overview from './components/Overview';
 import Footer from './components/Footer';
 import TimeComparison from './components/TimeComparison';
 import Revisions from "./components/Revisions";
+import PageViews from "./components/PageViews";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -66,6 +67,7 @@ const App = () => (
             </span>
           </Instruction>
           <Revisions />
+          <PageViews />
           <Heading text="Sources of Traffic" />
           <TreeMap />
           <Instruction className="paragraph">
