@@ -21,13 +21,16 @@ export default function Revisions() {
     const centerX = width / 2;
     const centerY = height / 2;
 
+    const maxSize = d3.max(data, (d) => d.size) || 1;
+    const rScale = d3.scaleSqrt().domain([0, maxSize]).range([10, 50]);
+
     const nodes = data.map((d, i) => {
       const angle = (i / data.length) * Math.PI * 2;
       return {
         ...d,
-        x: centerX + Math.cos(angle) * 120,
-        y: centerY + Math.sin(angle) * 120,
-        r: d.size / 5,
+        x: centerX + Math.cos(angle) * 140,
+        y: centerY + Math.sin(angle) * 140,
+        r: rScale(d.size),
       };
     });
 
