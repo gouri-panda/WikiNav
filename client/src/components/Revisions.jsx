@@ -1,5 +1,5 @@
 /* eslint-disable */
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 
 const width = 900;
@@ -7,6 +7,7 @@ const height = 500;
 
 export default function Revisions() {
   const svgRef = useRef();
+  const [language, setLanguage] = useState("en");
 
   useEffect(() => {
     const svg = d3.select(svgRef.current);
@@ -54,7 +55,17 @@ export default function Revisions() {
       .attr("text-anchor", "middle")
       .attr("dy", 4)
       .text((d) => d.id);
-  }, []);
+  }, [language]);
 
-  return <svg ref={svgRef} width={width} height={height} />;
+  return (
+    <div>
+      <select value={language} onChange={(e) => setLanguage(e.target.value)}>
+        <option value="en">en</option>
+        <option value="fr">fr</option>
+        <option value="de">de</option>
+      </select>
+
+      <svg ref={svgRef} width={width} height={height} />
+    </div>
+  );
 }
