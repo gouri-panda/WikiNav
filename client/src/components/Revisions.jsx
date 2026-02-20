@@ -10,6 +10,10 @@ export default function Revisions() {
   const [language, setLanguage] = useState("en");
 
   useEffect(() => {
+    drawChart();
+  }, [language]);
+
+  const drawChart = () => {
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
@@ -25,25 +29,32 @@ export default function Revisions() {
     const maxSize = d3.max(data, (d) => d.size) || 1;
     const rScale = d3.scaleSqrt().domain([0, maxSize]).range([10, 50]);
 
-    const radius = 150;
-
     const g = svg.append("g");
 
+    drawRings(g, centerX, centerY);
+    drawNodes(g, data, centerX, centerY, rScale);
+  };
+
+  const drawRings = (g, cx, cy) => {
     [60, 100, 140, 180].forEach((r) => {
       g.append("circle")
-        .attr("cx", centerX)
-        .attr("cy", centerY)
+        .attr("cx", cx)
+        .attr("cy", cy)
         .attr("r", r)
         .attr("fill", "none")
         .attr("stroke", "#ddd");
     });
+  };
+
+  const drawNodes = (g, data, cx, cy, rScale) => {
+    const radius = 150;
 
     const nodes = data.map((d, i) => {
       const angle = (i / data.length) * Math.PI * 2;
       return {
         ...d,
-        x: centerX + Math.cos(angle) * radius,
-        y: centerY + Math.sin(angle) * radius,
+        x: cx + Math.cos(angle) * radius,
+        y: cy + Math.sin(angle) * radius,
         r: rScale(d.size),
       };
     });
@@ -67,7 +78,7 @@ export default function Revisions() {
       .attr("text-anchor", "middle")
       .attr("dy", 4)
       .text((d) => d.id);
-  }, [language]);
+  };
 
   return (
     <div>
