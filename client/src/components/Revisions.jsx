@@ -8,10 +8,11 @@ const height = 500;
 export default function Revisions() {
   const svgRef = useRef();
   const [language, setLanguage] = useState("en");
+  const [period, setPeriod] = useState("30");
 
   useEffect(() => {
     drawChart();
-  }, [language]);
+  }, [language, period]);
 
   const drawChart = () => {
     const svg = d3.select(svgRef.current);
@@ -82,11 +83,19 @@ export default function Revisions() {
 
   return (
     <div>
-      <select value={language} onChange={(e) => setLanguage(e.target.value)}>
-        <option value="en">en</option>
-        <option value="fr">fr</option>
-        <option value="de">de</option>
-      </select>
+      <div style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
+        <select value={language} onChange={(e) => setLanguage(e.target.value)}>
+          <option value="en">en</option>
+          <option value="fr">fr</option>
+          <option value="de">de</option>
+        </select>
+
+        <select value={period} onChange={(e) => setPeriod(e.target.value)}>
+          <option value="30">30d</option>
+          <option value="90">90d</option>
+          <option value="365">365d</option>
+        </select>
+      </div>
 
       <svg ref={svgRef} width={width} height={height} />
     </div>
