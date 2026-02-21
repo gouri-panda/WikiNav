@@ -9,9 +9,17 @@ export default function Revisions() {
   const svgRef = useRef();
   const [language, setLanguage] = useState("en");
   const [period, setPeriod] = useState("30");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    drawChart();
+    setLoading(true);
+
+    const timer = setTimeout(() => {
+      setLoading(false);
+      drawChart();
+    }, 300);
+
+    return () => clearTimeout(timer);
   }, [language, period]);
 
   const drawChart = () => {
@@ -96,6 +104,8 @@ export default function Revisions() {
           <option value="365">365d</option>
         </select>
       </div>
+
+      {loading && <div>Loading...</div>}
 
       <svg ref={svgRef} width={width} height={height} />
     </div>
