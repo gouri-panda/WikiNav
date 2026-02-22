@@ -10,27 +10,40 @@ export default function Revisions() {
   const [language, setLanguage] = useState("en");
   const [period, setPeriod] = useState("30");
   const [loading, setLoading] = useState(true);
+  const [data, setData] = useState([]);
 
   useEffect(() => {
     setLoading(true);
 
-    const timer = setTimeout(() => {
-      setLoading(false);
-      drawChart();
-    }, 300);
-
-    return () => clearTimeout(timer);
+    fetch(
+      `https://wikimedia.org/api/rest_v1/metrics/edits/per-page/${language}.wikipedia/all-editor-types/content/India/monthly/2024010100/2024123100`
+    )
+      .then((res) => res.json())
+      .then((res) => {
+        const items = res.items || [];
+        setData(
+          items.map((d) => ({
+            id: d.timestamp,
+            size: d.edits,
+          }))
+        );
+        setLoading(false);
+      })
+      .catch(() => {
+        setData([]);
+        setLoading(false);
+      });
   }, [language, period]);
+
+  useEffect(() => {
+    if (!loading) drawChart();
+  }, [data, loading]);
 
   const drawChart = () => {
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
-    const data = [
-      { id: "en", size: 100 },
-      { id: "fr", size: 60 },
-      { id: "de", size: 80 },
-    ];
+    if (!data.length) return;
 
     const centerX = width / 2;
     const centerY = height / 2;
@@ -58,7 +71,7 @@ export default function Revisions() {
   const drawNodes = (g, data, cx, cy, rScale) => {
     const radius = 150;
 
-    const nodes = data.map((d, i) => {
+    const nodes = data.slice(0, 12).map((d, i) => {
       const angle = (i / data.length) * Math.PI * 2;
       return {
         ...d,
