@@ -3,7 +3,8 @@ import React, { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 
 const width = 900;
-const height = 500;
+const baseHeight = 400;
+const extraHeightPerNode = 20;
 
 export default function Revisions() {
   const svgRef = useRef();
@@ -21,12 +22,14 @@ export default function Revisions() {
       .then((res) => res.json())
       .then((res) => {
         const items = res.items || [];
-        setData(
-          items.map((d) => ({
-            id: d.timestamp,
-            size: d.edits,
-          }))
-        );
+
+        const mapped = items.map((d, i) => ({
+          id: i,
+          label: d.timestamp,
+          size: d.edits,
+        }));
+
+        setData(mapped.slice(-12));
         setLoading(false);
       })
       .catch(() => {
@@ -39,6 +42,9 @@ export default function Revisions() {
     if (!loading) drawChart();
   }, [data, loading]);
 
+  const chartHeight =
+    baseHeight + Math.max(0, data.length - 8) * extraHeightPerNode;
+
   const drawChart = () => {
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
@@ -46,7 +52,7 @@ export default function Revisions() {
     if (!data.length) return;
 
     const centerX = width / 2;
-    const centerY = height / 2;
+    const centerY = chartHeight / 2;
 
     const maxSize = d3.max(data, (d) => d.size) || 1;
     const rScale = d3.scaleSqrt().domain([0, maxSize]).range([10, 50]);
@@ -71,7 +77,7 @@ export default function Revisions() {
   const drawNodes = (g, data, cx, cy, rScale) => {
     const radius = 150;
 
-    const nodes = data.slice(0, 12).map((d, i) => {
+    const nodes = data.map((d, i) => {
       const angle = (i / data.length) * Math.PI * 2;
       return {
         ...d,
@@ -99,7 +105,7 @@ export default function Revisions() {
       .attr("y", (d) => d.y)
       .attr("text-anchor", "middle")
       .attr("dy", 4)
-      .text((d) => d.id);
+      .text((d) => d.label);
   };
 
   return (
@@ -120,7 +126,7 @@ export default function Revisions() {
 
       {loading && <div>Loading...</div>}
 
-      <svg ref={svgRef} width={width} height={height} />
+      <svg ref={svgRef} width={width} height={chartHeight} />
     </div>
   );
 }
