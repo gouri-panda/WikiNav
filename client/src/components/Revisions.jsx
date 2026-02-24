@@ -109,15 +109,33 @@ export default function Revisions() {
   };
 
   return (
-    <div>
-      <div style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
-        <select value={language} onChange={(e) => setLanguage(e.target.value)}>
+    <div style={{ padding: "10px" }}>
+      <h2 style={{ marginBottom: "12px" }}>Revisions</h2>
+
+      <div
+        style={{
+          display: "flex",
+          gap: "12px",
+          alignItems: "center",
+          marginBottom: "12px",
+          flexWrap: "wrap",
+        }}
+      >
+        <select
+          value={language}
+          onChange={(e) => setLanguage(e.target.value)}
+          style={{ height: "32px" }}
+        >
           <option value="en">en</option>
           <option value="fr">fr</option>
           <option value="de">de</option>
         </select>
 
-        <select value={period} onChange={(e) => setPeriod(e.target.value)}>
+        <select
+          value={period}
+          onChange={(e) => setPeriod(e.target.value)}
+          style={{ height: "32px" }}
+        >
           <option value="30">30d</option>
           <option value="90">90d</option>
           <option value="365">365d</option>
