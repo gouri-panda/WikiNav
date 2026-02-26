@@ -37,7 +37,10 @@ export default function Wikipulse() {
 
     data.forEach((d, i) => {
       const angle = i * angleStep;
-      const r = rScale(d.views);
+      const baseR = rScale(d.views);
+      const spiralOffset = i * 1.5;
+
+      const r = baseR + spiralOffset;
 
       g.append("circle")
         .attr("cx", Math.cos(angle) * r)
