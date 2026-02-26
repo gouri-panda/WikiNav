@@ -4,6 +4,7 @@ import * as d3 from "d3";
 
 const width = 800;
 const height = 400;
+const margin = { top: 20, right: 20, bottom: 60, left: 50 };
 
 export default function PageViews() {
   const [data, setData] = useState([]);
@@ -35,18 +36,24 @@ export default function PageViews() {
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
+    const innerWidth = width - margin.left - margin.right;
+    const innerHeight = height - margin.top - margin.bottom;
+
+    const g = svg
+      .append("g")
+      .attr("transform", `translate(${margin.left}, ${margin.top})`);
+
     const x = d3
       .scaleBand()
       .domain(data.map((d) => d.date))
-      .range([0, width])
+      .range([0, innerWidth])
       .padding(0.2);
 
     const y = d3
       .scaleLinear()
       .domain([0, d3.max(data, (d) => d.views)])
-      .range([height, 0]);
-
-    const g = svg.append("g");
+      .nice()
+      .range([innerHeight, 0]);
 
     g.selectAll("rect")
       .data(data)
@@ -55,8 +62,17 @@ export default function PageViews() {
       .attr("x", (d) => x(d.date))
       .attr("y", (d) => y(d.views))
       .attr("width", x.bandwidth())
-      .attr("height", (d) => height - y(d.views))
+      .attr("height", (d) => innerHeight - y(d.views))
       .attr("fill", "#4f46e5");
+
+    g.append("g")
+      .attr("transform", `translate(0, ${innerHeight})`)
+      .call(d3.axisBottom(x).tickValues(x.domain().filter((d, i) => i % 3 === 0)))
+      .selectAll("text")
+      .attr("transform", "rotate(-45)")
+      .style("text-anchor", "end");
+
+    g.append("g").call(d3.axisLeft(y));
   }, [data]);
 
   return (
