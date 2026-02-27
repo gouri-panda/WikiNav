@@ -4,6 +4,7 @@ import * as d3 from "d3";
 
 export default function Wikipulse() {
   const [data, setData] = useState([]);
+  const [monthly, setMonthly] = useState([]);
   const svgRef = useRef();
 
   useEffect(() => {
@@ -12,7 +13,23 @@ export default function Wikipulse() {
     )
       .then((res) => res.json())
       .then((res) => {
-        setData(res.items || []);
+        const items = res.items || [];
+        setData(items);
+
+        const map = {};
+
+        items.forEach((d) => {
+          const key = `${d.timestamp.slice(0, 4)}-${d.timestamp.slice(4, 6)}`;
+          if (!map[key]) map[key] = 0;
+          map[key] += d.views;
+        });
+
+        const result = Object.entries(map).map(([k, v]) => ({
+          month: k,
+          views: v,
+        }));
+
+        setMonthly(result);
       });
   }, []);
 
@@ -53,7 +70,16 @@ export default function Wikipulse() {
   return (
     <div>
       <h2>WikiPulse</h2>
+
       <svg ref={svgRef} width={500} height={500} />
+
+      <div>
+        {monthly.map((m, i) => (
+          <div key={i}>
+            {m.month} - {m.views}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
