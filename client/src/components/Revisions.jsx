@@ -23,30 +23,17 @@ export default function Revisions() {
       .then((res) => {
         const items = res.items || [];
 
-        if (!items.length) {
-          setData([
-            { id: 0, label: "fallback", size: 10 },
-            { id: 1, label: "fallback", size: 20 },
-            { id: 2, label: "fallback", size: 15 },
-          ]);
-        } else {
-          const mapped = items.map((d, i) => ({
-            id: i,
-            label: d.timestamp,
-            size: d.edits || 0,
-          }));
+        const mapped = items.map((d, i) => ({
+          id: i,
+          label: d.timestamp.slice(0, 6),
+          size: d.edits || 0,
+        }));
 
-          setData(mapped.slice(-12));
-        }
-
+        setData(mapped.slice(-12));
         setLoading(false);
       })
       .catch(() => {
-        setData([
-          { id: 0, label: "fallback", size: 10 },
-          { id: 1, label: "fallback", size: 20 },
-          { id: 2, label: "fallback", size: 15 },
-        ]);
+        setData([]);
         setLoading(false);
       });
   }, [language, period]);
@@ -62,25 +49,26 @@ export default function Revisions() {
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
+    if (!data.length) return;
+
     const centerX = width / 2;
     const centerY = chartHeight / 2;
 
     const maxSize = d3.max(data, (d) => d.size) || 1;
-
-    const rScale = d3.scaleSqrt().domain([0, maxSize]).range([10, 50]);
+    const rScale = d3.scaleSqrt().domain([0, maxSize]).range([12, 55]);
 
     const g = svg
       .append("g")
       .attr("transform", `translate(${centerX}, ${centerY})`);
 
-    [60, 100, 140, 180].forEach((r) => {
+    [80, 120, 160, 200].forEach((r) => {
       g.append("circle")
         .attr("r", r)
         .attr("fill", "none")
-        .attr("stroke", "#ddd");
+        .attr("stroke", "#e5e7eb");
     });
 
-    const radius = 150;
+    const radius = 170;
 
     const nodes = data.map((d, i) => {
       const angle = (i / data.length) * Math.PI * 2;
@@ -100,16 +88,16 @@ export default function Revisions() {
       .attr("cx", (d) => d.x)
       .attr("cy", (d) => d.y)
       .attr("r", (d) => d.r)
-      .attr("fill", "#69b3a2");
+      .attr("fill", "#60a5fa");
 
     g.selectAll("text")
       .data(nodes)
       .enter()
       .append("text")
       .attr("x", (d) => d.x)
-      .attr("y", (d) => d.y)
+      .attr("y", (d) => d.y + d.r + 10)
       .attr("text-anchor", "middle")
-      .attr("dy", 4)
+      .style("font-size", "10px")
       .text((d) => d.label);
   };
 
