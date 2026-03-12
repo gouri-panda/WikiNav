@@ -8,6 +8,8 @@ const extraHeightPerNode = 20;
 
 export default function Revisions() {
   const svgRef = useRef();
+  const tooltipRef = useRef();
+
   const [language, setLanguage] = useState("en");
   const [period, setPeriod] = useState("30");
   const [loading, setLoading] = useState(true);
@@ -51,6 +53,8 @@ export default function Revisions() {
 
     if (!data.length) return;
 
+    const tooltip = d3.select(tooltipRef.current);
+
     const centerX = width / 2;
     const centerY = chartHeight / 2;
 
@@ -88,7 +92,18 @@ export default function Revisions() {
       .attr("cx", (d) => d.x)
       .attr("cy", (d) => d.y)
       .attr("r", (d) => d.r)
-      .attr("fill", "#60a5fa");
+      .attr("fill", "#60a5fa")
+      .on("mouseover", (event, d) => {
+        tooltip.style("opacity", 1).html(`Edits: ${d.size}`);
+      })
+      .on("mousemove", (event) => {
+        tooltip
+          .style("left", event.pageX + 10 + "px")
+          .style("top", event.pageY + "px");
+      })
+      .on("mouseout", () => {
+        tooltip.style("opacity", 0);
+      });
 
     g.selectAll("text")
       .data(nodes)
@@ -102,7 +117,7 @@ export default function Revisions() {
   };
 
   return (
-    <div style={{ padding: "10px" }}>
+    <div style={{ padding: "10px", position: "relative" }}>
       <h2>Revisions</h2>
 
       <div style={{ display: "flex", gap: "12px", marginBottom: "12px" }}>
@@ -122,6 +137,20 @@ export default function Revisions() {
       {loading && <div>Loading...</div>}
 
       <svg ref={svgRef} width={width} height={chartHeight} />
+
+      <div
+        ref={tooltipRef}
+        style={{
+          position: "absolute",
+          background: "#111",
+          color: "#fff",
+          padding: "4px 8px",
+          fontSize: "12px",
+          borderRadius: "4px",
+          pointerEvents: "none",
+          opacity: 0,
+        }}
+      />
     </div>
   );
 }
