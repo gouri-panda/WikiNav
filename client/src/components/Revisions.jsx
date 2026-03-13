@@ -2,155 +2,117 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 
-const width = 900;
-const baseHeight = 400;
-const extraHeightPerNode = 20;
+const width = 1000;
+const height = 500;
 
 export default function Revisions() {
   const svgRef = useRef();
-  const tooltipRef = useRef();
 
-  const [language, setLanguage] = useState("en");
-  const [period, setPeriod] = useState("30");
-  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState(["enwiki"]);
   const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
+  async function fetchLanguage(lang) {
+    try {
+      const code = lang.replace("wiki", "");
+
+      const res = await fetch(
+        `https://${code}.wikipedia.org/w/api.php?action=query&prop=revisions&titles=India&rvprop=size|tags&rvlimit=50&format=json&origin=*`
+      );
+
+      const json = await res.json();
+      const page = Object.values(json.query?.pages || {})[0] || {};
+      const revs = page.revisions || [];
+
+      return {
+        lang,
+        revisions: revs.length,
+        reverts: revs.filter((r) =>
+          r.tags?.includes("mw-reverted")
+        ).length,
+        size: revs[0]?.size || 0,
+        revertSize:
+          (revs[0]?.size || 0) - (revs[1]?.size || revs[0]?.size || 0),
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  async function loadData() {
     setLoading(true);
 
-    fetch(
-      `https://wikimedia.org/api/rest_v1/metrics/edits/per-page/${language}.wikipedia/all-editor-types/content/India/monthly/2024010100/2024123100`
-    )
-      .then((res) => res.json())
-      .then((res) => {
-        const items = res.items || [];
+    const results = await Promise.all(
+      selected.map((lang) => fetchLanguage(lang))
+    );
 
-        const mapped = items.map((d, i) => ({
-          id: i,
-          label: d.timestamp.slice(0, 6),
-          size: d.edits || 0,
-        }));
-
-        setData(mapped.slice(-12));
-        setLoading(false);
-      })
-      .catch(() => {
-        setData([]);
-        setLoading(false);
-      });
-  }, [language, period]);
+    setData(results.filter(Boolean));
+    setLoading(false);
+  }
 
   useEffect(() => {
-    if (!loading) drawChart();
-  }, [data, loading]);
+    loadData();
+  }, [selected]);
 
-  const chartHeight =
-    baseHeight + Math.max(0, data.length - 8) * extraHeightPerNode;
+  useEffect(() => {
+    if (!data.length) return;
 
-  const drawChart = () => {
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
-    if (!data.length) return;
-
-    const tooltip = d3.select(tooltipRef.current);
-
     const centerX = width / 2;
-    const centerY = chartHeight / 2;
+    const centerY = height / 2;
 
     const maxSize = d3.max(data, (d) => d.size) || 1;
-    const rScale = d3.scaleSqrt().domain([0, maxSize]).range([12, 55]);
 
-    const g = svg
-      .append("g")
-      .attr("transform", `translate(${centerX}, ${centerY})`);
+    const rScale = d3.scaleSqrt()
+      .domain([0, maxSize])
+      .range([30, 90]);
 
-    [80, 120, 160, 200].forEach((r) => {
-      g.append("circle")
-        .attr("r", r)
-        .attr("fill", "none")
-        .attr("stroke", "#e5e7eb");
-    });
+    const nodes = data.map((d) => ({
+      ...d,
+      r: rScale(d.size),
+    }));
 
-    const radius = 170;
+    const g = svg.append("g");
 
-    const nodes = data.map((d, i) => {
-      const angle = (i / data.length) * Math.PI * 2;
-      return {
-        ...d,
-        x: Math.cos(angle) * radius,
-        y: Math.sin(angle) * radius,
-        r: rScale(d.size),
-      };
-    });
-
-    g.selectAll("circle.node")
+    const node = g.selectAll("g")
       .data(nodes)
       .enter()
-      .append("circle")
-      .attr("class", "node")
-      .attr("cx", (d) => d.x)
-      .attr("cy", (d) => d.y)
+      .append("g");
+
+    node.append("circle")
       .attr("r", (d) => d.r)
-      .attr("fill", "#60a5fa")
-      .on("mouseover", (event, d) => {
-        tooltip.style("opacity", 1).html(`Edits: ${d.size}`);
-      })
-      .on("mousemove", (event) => {
-        tooltip
-          .style("left", event.pageX + 10 + "px")
-          .style("top", event.pageY + "px");
-      })
-      .on("mouseout", () => {
-        tooltip.style("opacity", 0);
+      .attr("fill", "#6e8595");
+
+    node.append("text")
+      .text((d) => d.lang)
+      .attr("text-anchor", "middle")
+      .attr("dy", 4)
+      .style("fill", "white");
+
+    const simulation = d3.forceSimulation(nodes)
+      .force("center", d3.forceCenter(centerX, centerY))
+      .force("collision", d3.forceCollide().radius(d => d.r + 5))
+      .on("tick", () => {
+        node.attr("transform", d => `translate(${d.x},${d.y})`);
       });
 
-    g.selectAll("text")
-      .data(nodes)
-      .enter()
-      .append("text")
-      .attr("x", (d) => d.x)
-      .attr("y", (d) => d.y + d.r + 10)
-      .attr("text-anchor", "middle")
-      .style("font-size", "10px")
-      .text((d) => d.label);
-  };
+    return () => simulation.stop();
+
+  }, [data]);
 
   return (
-    <div style={{ padding: "10px", position: "relative" }}>
+    <div>
       <h2>Revisions</h2>
 
-      <div style={{ display: "flex", gap: "12px", marginBottom: "12px" }}>
-        <select value={language} onChange={(e) => setLanguage(e.target.value)}>
-          <option value="en">en</option>
-          <option value="fr">fr</option>
-          <option value="de">de</option>
-        </select>
-
-        <select value={period} onChange={(e) => setPeriod(e.target.value)}>
-          <option value="30">30d</option>
-          <option value="90">90d</option>
-          <option value="365">365d</option>
-        </select>
-      </div>
+      <button onClick={() => setSelected(["enwiki", "frwiki"])}>
+        Compare
+      </button>
 
       {loading && <div>Loading...</div>}
 
-      <svg ref={svgRef} width={width} height={chartHeight} />
-
-      <div
-        ref={tooltipRef}
-        style={{
-          position: "absolute",
-          background: "#111",
-          color: "#fff",
-          padding: "4px 8px",
-          fontSize: "12px",
-          borderRadius: "4px",
-          pointerEvents: "none",
-          opacity: 0,
-        }}
-      />
+      <svg ref={svgRef} width={width} height={height} />
     </div>
   );
 }
