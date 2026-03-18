@@ -59,11 +59,16 @@ export default function Wikipulse() {
 
     const rScale = d3.scaleLinear().domain([0, max]).range([5, 20]);
 
-    const angleStep = 0.3;
+    const colorScale = d3
+      .scaleLinear()
+      .domain([0, max])
+      .range(["#cfe8ff", "#1a73e8"]);
+
+    const angleStep = 0.25;
 
     data.forEach((d, i) => {
       const angle = i * angleStep;
-      const spiralRadius = i * 2;
+      const spiralRadius = i * 3;
 
       const x = Math.cos(angle) * spiralRadius;
       const y = Math.sin(angle) * spiralRadius;
@@ -72,23 +77,31 @@ export default function Wikipulse() {
         .attr("cx", x)
         .attr("cy", y)
         .attr("r", rScale(d.views))
-        .attr("fill", "#1a73e8")
-        .attr("opacity", 0.7);
+        .attr("fill", colorScale(d.views))
+        .attr("opacity", 0.85);
     });
   }, [data]);
 
   return (
-    <div>
-      <h2>WikiPulse</h2>
-
-      <svg ref={svgRef} width={500} height={500} />
-
-      <div>
-        {monthly.map((m, i) => (
-          <div key={i}>
-            {m.month} - {m.views}
+    <div className="wikipulse-wrapper">
+      <div className="wikipulse-grid">
+        <div className="wikipulse-left">
+          <div className="wikipulse-header">
+            <h2 className="wikipulse-title">WikiPulse</h2>
           </div>
-        ))}
+
+          <div>
+            {monthly.map((m, i) => (
+              <div key={i}>
+                {m.month} - {m.views}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="wikipulse-right">
+          <svg ref={svgRef} width={500} height={500} />
+        </div>
       </div>
     </div>
   );

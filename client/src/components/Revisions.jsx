@@ -1,5 +1,5 @@
 /* eslint-disable */
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 // eslint-disable-next-line import/no-extraneous-dependencies
 import * as d3 from "d3";
 import MultiSelect from "./LanguageComparison/MultiSelect";
@@ -9,6 +9,17 @@ import Loader from "./Loader";
 const width = 1000;
 const height = 500;
 const fixedLangOption = { value: "enwiki", label: "enwiki", isFixed: true };
+
+function formatWikiDomain(wikiKey) {
+    return `${wikiKey.replace("wiki", "")}.wikipedia.org`;
+}
+
+function buildLanguageLabel(wikiKey, localizedTitle, isCurrent = false) {
+    const readableTitle = localizedTitle ? localizedTitle.replaceAll("_", " ") : "";
+    const titleSuffix = readableTitle ? ` - ${readableTitle}` : "";
+    const currentSuffix = isCurrent ? " (current)" : "";
+    return `${formatWikiDomain(wikiKey)}${titleSuffix}${currentSuffix}`;
+}
 
 function sleep(ms) {
     return new Promise((resolve) => {
@@ -44,8 +55,10 @@ async function fetchJsonWithRetry(url, retries = 2) {
 export default function WikiLanguageViz() {
 
     const svgRef = useRef();
+    const loadRequestRef = useRef(0);
     const [{ title, language }] = useSearchState();
     const article = title || "Chocolate";
+
     const [languages, setLanguages] = useState([]);
     const [selected, setSelected] = useState(["enwiki"]);
     const [titlesByWiki, setTitlesByWiki] = useState({});
@@ -54,9 +67,54 @@ export default function WikiLanguageViz() {
     const [progress, setProgress] = useState(0);
     const [loading, setLoading] = useState(false);
     const [isLookupReady, setIsLookupReady] = useState(false);
+    const [periodPreset, setPeriodPreset] = useState("365");
+    const [customStart, setCustomStart] = useState("");
+    const [customEnd, setCustomEnd] = useState("");
+    const [periodError, setPeriodError] = useState("");
 
     function fontScale(r, min, max, factor) {
         return Math.max(min, Math.min(max, r * factor));
+    }
+
+    function getPeriodWindow() {
+        const now = new Date();
+
+        if (periodPreset === "custom") {
+            if (!customStart || !customEnd) {
+                return { window: null, error: "Select both custom start and end dates." };
+            }
+
+            const startDate = new Date(`${customStart}T00:00:00`);
+            const endDate = new Date(`${customEnd}T23:59:59`);
+
+            if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+                return { window: null, error: "Invalid custom date range." };
+            }
+
+            if (startDate > endDate) {
+                return { window: null, error: "Custom start date must be before end date." };
+            }
+
+            return {
+                window: {
+                    startISO: startDate.toISOString(),
+                    endISO: endDate.toISOString()
+                },
+                error: ""
+            };
+        }
+
+        const days = Number(periodPreset);
+        const startDate = new Date(now);
+        startDate.setDate(startDate.getDate() - days);
+
+        return {
+            window: {
+                startISO: startDate.toISOString(),
+                endISO: now.toISOString()
+            },
+            error: ""
+        };
     }
     async function getQID() {
         if (!article) return null;
@@ -116,13 +174,15 @@ export default function WikiLanguageViz() {
                     if (englishTitle) {
                         mappedTitles[fixedLangOption.value] = englishTitle;
                     }
-                } catch {}
+                } catch {
+                }
             }
 
             if (!mappedTitles[fixedLangOption.value]) {
                 mappedTitles[fixedLangOption.value] = article;
             }
             const uniqueSitelinks = Array.from(new Set([fixedLangOption.value, ...sitelinks]));
+
             setLanguages(uniqueSitelinks);
             setTitlesByWiki(mappedTitles);
             setIsLookupReady(true);
@@ -133,18 +193,49 @@ export default function WikiLanguageViz() {
         }
 
     }
-    async function fetchLanguage(lang) {
+    async function fetchLanguage(lang, periodWindow) {
+
         try {
+
             const code = lang.replace("wiki", "");
             const localizedTitle = titlesByWiki[lang] || article;
             const encodedTitle = encodeURIComponent(localizedTitle);
+            const { startISO, endISO } = periodWindow;
+
+            const fetchBoundarySize = async (boundaryISO) => {
+                const params = new URLSearchParams({
+                    action: "query",
+                    prop: "revisions",
+                    titles: encodedTitle,
+                    rvprop: "size",
+                    rvlimit: "1",
+                    rvstart: boundaryISO,
+                    rvdir: "older",
+                    format: "json",
+                    origin: "*"
+                });
+
+                const json = await fetchJsonWithRetry(`https://${code}.wikipedia.org/w/api.php?${params.toString()}`);
+                const page = Object.values(json.query?.pages || {})[0] || {};
+                const revision = page.revisions?.[0];
+
+                if (typeof revision?.size === "number") {
+                    return revision.size;
+                }
+
+                return null;
+            };
+
             const fetchRevisionsPage = async (rvcontinue) => {
                 const params = new URLSearchParams({
                     action: "query",
                     prop: "revisions",
                     titles: encodedTitle,
-                    rvprop: "size|tags",
+                    rvprop: "size|tags|timestamp",
                     rvlimit: "max",
+                    rvstart: endISO,
+                    rvend: startISO,
+                    rvdir: "older",
                     format: "json",
                     origin: "*"
                 });
@@ -172,7 +263,13 @@ export default function WikiLanguageViz() {
 
             const revs = await fetchAllRevisions();
 
-            if (revs.length === 0) {
+            const [sizeAtEnd, sizeAtStart] = await Promise.all([
+                fetchBoundarySize(endISO),
+                fetchBoundarySize(startISO)
+            ]);
+
+            if (revs.length === 0 && sizeAtEnd === null && sizeAtStart === null) {
+
                 setMissing(m => [...m, lang]);
                 return null;
             }
@@ -185,8 +282,12 @@ export default function WikiLanguageViz() {
                 r.tags?.includes("mw-undo")
             );
             const reverts = revertedRevisions.length;
-            const totalSize = revs.reduce((sum, rev) => sum + (rev.size || 0), 0);
-            const revertSize = revertedRevisions.reduce((sum, rev) => sum + (rev.size || 0), 0);
+
+            // Page size at end of selected time period.
+            const totalSize = sizeAtEnd ?? revs[0]?.size ?? 0;
+            // Net page size change over selected time period.
+            const startSize = sizeAtStart ?? totalSize;
+            const revertSize = totalSize - startSize;
 
             return {
                 lang,
@@ -202,6 +303,15 @@ export default function WikiLanguageViz() {
         }
     }
     async function loadData() {
+        const { window: periodWindow, error } = getPeriodWindow();
+        setPeriodError(error);
+        if (!periodWindow) {
+            setData([]);
+            setProgress(0);
+            setMissing([]);
+            return;
+        }
+        const requestId = ++loadRequestRef.current;
         setLoading(true);
         setProgress(0);
         setMissing([]);
@@ -210,12 +320,17 @@ export default function WikiLanguageViz() {
 
             const languageResults = await Promise.all(
                 selected.map(async (lang) => {
-                    const stats = await fetchLanguage(lang);
+                    const stats = await fetchLanguage(lang, periodWindow);
                     completed += 1;
-                    setProgress(completed);
+                    if (requestId === loadRequestRef.current) {
+                        setProgress(completed);
+                    }
                     return { lang, stats };
                 })
             );
+            if (requestId !== loadRequestRef.current) {
+                return;
+            }
 
             const hasLanguageFailure = languageResults.some(({ stats }) => !stats);
             const results = languageResults
@@ -230,11 +345,14 @@ export default function WikiLanguageViz() {
                 return results;
             });
         } finally {
-            setLoading(false);
+            if (requestId === loadRequestRef.current) {
+                setLoading(false);
+            }
         }
 
     }
     useEffect(() => {
+        loadRequestRef.current += 1;
         setSelected([fixedLangOption.value]);
         setLanguages([fixedLangOption.value]);
         setTitlesByWiki({});
@@ -256,17 +374,15 @@ export default function WikiLanguageViz() {
         }
 
         loadData();
-    }, [selected, article, titlesByWiki, isLookupReady]);
+    }, [selected, article, titlesByWiki, isLookupReady, periodPreset, customStart, customEnd]);
 
     useEffect(() => {
+        const svg = d3.select(svgRef.current);
+        svg.selectAll("*").remove();
 
         if (data.length === 0) {
             return () => {};
         }
-
-        const svg = d3.select(svgRef.current);
-
-        svg.selectAll("*").remove();
 
         const centerX = width / 2;
         const centerY = height / 2;
@@ -380,7 +496,7 @@ export default function WikiLanguageViz() {
                 .attr("y1", 0)
                 .attr("x2", d => d.r + 35)
                 .attr("y2", -5);
-
+            
             node.select(".size")
                 .text(d => d.size.toLocaleString())
                 .attr("x", d => d.r + 40)
@@ -393,7 +509,10 @@ export default function WikiLanguageViz() {
                 .attr("x2", -10)
                 .attr("y2", d => d.r + 25);
             node.select(".delta")
-                .text(d => (d.revertSize ?? 0).toLocaleString())
+                .text(d => {
+                    const v = d.revertSize ?? 0;
+                    return (v >= 0 ? "+" : "") + v.toLocaleString();
+                })
                 .attr("x", -15)
                 .attr("y", d => d.r + 35)
                 .style("font-size", "12px")
@@ -436,55 +555,130 @@ export default function WikiLanguageViz() {
         a.click();
 
     }
+    const currentArticleLabel = titlesByWiki[fixedLangOption.value] || article;
+    const fixedOption = useMemo(() => ({
+        ...fixedLangOption,
+        label: buildLanguageLabel(fixedLangOption.value, currentArticleLabel, true)
+    }), [currentArticleLabel]);
 
-    const langOptions = languages
-        .filter(l => l !== fixedLangOption.value)
-        .map(l => ({ value: l, label: l, isFixed: false }));
+    const langOptions = useMemo(() => (
+        languages
+            .filter(l => l !== fixedLangOption.value)
+            .map(l => ({
+                value: l,
+                label: buildLanguageLabel(l, titlesByWiki[l] || article),
+                isFixed: false
+            }))
+    ), [languages, titlesByWiki, article]);
+
+    const selectedPeriodLabel = periodPreset === "custom"
+        ? (customStart && customEnd ? `${customStart} to ${customEnd}` : "a custom range")
+        : `the last ${periodPreset} days`;
 
     return (
 
-        <div>
-            <div className="language-select">
-                <MultiSelect
-                    fixed={fixedLangOption}
-                    options={langOptions}
-                    handleSelection={addLang}
-                    handleRemoval={(removed) =>
-                        setSelected((prev) =>
-                            prev.filter((l) => !removed.find((r) => r.value === l))
-                        )
-                    }
-                />
+        <div className="revisions-container">
+            <div className="revisions-toolbar">
+                <div className="revisions-period-panel">
+                    <div className="revisions-control-group">
+                        <label className="revisions-period-label" htmlFor="revisions-language-select">
+                            Article languages
+                        </label>
+                        <div id="revisions-language-select" className="revisions-language-select">
+                            <MultiSelect
+                                fixed={fixedOption}
+                                options={langOptions}
+                                handleSelection={addLang}
+                                handleRemoval={(removed) =>
+                                    setSelected((prev) =>
+                                        prev.filter((l) => !removed.find((r) => r.value === l))
+                                    )
+                                }
+                            />
+                        </div>
+                    </div>
+
+                    <div className="revisions-control-group revisions-time-group">
+                        <label htmlFor="revisions-period-select" className="revisions-period-label">Time period</label>
+                        <select
+                            id="revisions-period-select"
+                            className="revisions-period-select"
+                            value={periodPreset}
+                            onChange={(e) => setPeriodPreset(e.target.value)}
+                        >
+                            <option value="30">Last 30 days</option>
+                            <option value="90">Last 90 days</option>
+                            <option value="365">Last 365 days</option>
+                            <option value="custom">Custom range</option>
+                        </select>
+
+                        {periodPreset === "custom" && (
+                            <div className="revisions-custom-range">
+                                <input
+                                    type="date"
+                                    className="revisions-date-input"
+                                    value={customStart}
+                                    onChange={(e) => setCustomStart(e.target.value)}
+                                    aria-label="Custom start date"
+                                />
+                                <span>to</span>
+                                <input
+                                    type="date"
+                                    className="revisions-date-input"
+                                    value={customEnd}
+                                    onChange={(e) => setCustomEnd(e.target.value)}
+                                    aria-label="Custom end date"
+                                />
+                            </div>
+                        )}
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={download}
+                        className="sankey-download-button"
+                    >
+                        Download SVG
+                    </button>
+                </div>
             </div>
-            <div className="sankey-controls-right" style={{ justifyContent: "flex-end", marginBottom: 8 }}>
-                <button
-                    type="button"
-                    onClick={download}
-                    className="sankey-download-button"
-                >
-                    Download SVG
-                </button>
-            </div>
+
+            <p className="paragraph">
+                Showing revision activity for <strong>{article.replaceAll("_", " ")}</strong> across{' '}
+                <strong>{selected.length}</strong> language editions during <strong>{selectedPeriodLabel}</strong>.
+            </p>
+
+            {periodError && (
+                <div className="revisions-status revisions-status-error">
+                    {periodError}
+                </div>
+            )}
             {loading && data.length === 0 && <Loader />}
 
             {loading && data.length > 0 && (
-                <div style={{ marginBottom: 10 }}>
+                <div className="revisions-status revisions-status-info">
                     Updating graph in background: {progress} / {selected.length} languages
-                    <progress value={progress} max={selected.length} />
+                    <progress className="revisions-progress" value={progress} max={selected.length} />
                 </div>
             )}
             {missing.length > 0 &&
 
-                <div style={{ color: "red", marginBottom: 6 }}>
-                    Missing: {missing.join(", ")}
+                <div className="revisions-status revisions-status-warning">
+                    Missing: {missing.map(formatWikiDomain).join(", ")}
                 </div>
 
             }
-            <svg
-                ref={svgRef}
-                width={width}
-                height={height}
-            />
+            <div className="revisions-chart">
+                <svg
+                    ref={svgRef}
+                    className="revisions-svg"
+                    width={width}
+                    height={height}
+                    viewBox={`0 0 ${width} ${height}`}
+                    preserveAspectRatio="xMidYMid meet"
+                />
+            </div>
+
         </div>
     );
 }
