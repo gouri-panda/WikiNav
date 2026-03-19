@@ -55,14 +55,18 @@ export default function Wikipulse() {
       .append("g")
       .attr("transform", `translate(${centerX}, ${centerY})`);
 
-    const max = d3.max(data, (d) => d.views) || 1;
+    const values = data.map((d) => d.views);
+    const min = d3.min(values) || 0;
+    const max = d3.max(values) || 1;
 
-    const rScale = d3.scaleLinear().domain([0, max]).range([5, 20]);
+    const rScale = d3.scaleLinear().domain([min, max]).range([4, 18]);
 
     const colorScale = d3
       .scaleLinear()
-      .domain([0, max])
-      .range(["#cfe8ff", "#1a73e8"]);
+      .domain([0, 0.5, 1])
+      .range(["#e8f1ff", "#6ba6ff", "#0b57d0"]);
+
+    const normalize = (v) => (v - min) / (max - min || 1);
 
     const angleStep = 0.25;
 
@@ -73,12 +77,14 @@ export default function Wikipulse() {
       const x = Math.cos(angle) * spiralRadius;
       const y = Math.sin(angle) * spiralRadius;
 
+      const n = normalize(d.views);
+
       g.append("circle")
         .attr("cx", x)
         .attr("cy", y)
         .attr("r", rScale(d.views))
-        .attr("fill", colorScale(d.views))
-        .attr("opacity", 0.85);
+        .attr("fill", colorScale(n))
+        .attr("opacity", 0.9);
     });
   }, [data]);
 
