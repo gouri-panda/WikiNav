@@ -59,7 +59,7 @@ export default function Wikipulse() {
     const min = d3.min(values) || 0;
     const max = d3.max(values) || 1;
 
-    const rScale = d3.scaleLinear().domain([min, max]).range([4, 18]);
+    const rScale = d3.scaleLinear().domain([min, max]).range([4, 16]);
 
     const colorScale = d3
       .scaleLinear()
@@ -68,11 +68,13 @@ export default function Wikipulse() {
 
     const normalize = (v) => (v - min) / (max - min || 1);
 
-    const angleStep = 0.25;
+    const angleStep = 0.22;
 
     data.forEach((d, i) => {
       const angle = i * angleStep;
-      const spiralRadius = i * 3;
+
+      const t = i / data.length;
+      const spiralRadius = 10 + t * 220;
 
       const x = Math.cos(angle) * spiralRadius;
       const y = Math.sin(angle) * spiralRadius;
