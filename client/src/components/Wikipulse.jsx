@@ -59,8 +59,6 @@ export default function Wikipulse() {
     const min = d3.min(values) || 0;
     const max = d3.max(values) || 1;
 
-    const rScale = d3.scaleLinear().domain([min, max]).range([4, 16]);
-
     const colorScale = d3
       .scaleLinear()
       .domain([0, 0.5, 1])
@@ -71,22 +69,26 @@ export default function Wikipulse() {
     const angleStep = 0.22;
 
     data.forEach((d, i) => {
-      const angle = i * angleStep;
-
       const t = i / data.length;
-      const spiralRadius = 10 + t * 220;
 
-      const x = Math.cos(angle) * spiralRadius;
-      const y = Math.sin(angle) * spiralRadius;
+      const innerR = 10 + t * 200;
+      const outerR = innerR + 6;
+
+      const startAngle = i * angleStep;
+      const endAngle = startAngle + angleStep * 0.9;
 
       const n = normalize(d.views);
 
-      g.append("circle")
-        .attr("cx", x)
-        .attr("cy", y)
-        .attr("r", rScale(d.views))
+      const arc = d3.arc()
+        .innerRadius(innerR)
+        .outerRadius(outerR)
+        .startAngle(startAngle)
+        .endAngle(endAngle);
+
+      g.append("path")
+        .attr("d", arc)
         .attr("fill", colorScale(n))
-        .attr("opacity", 0.9);
+        .attr("opacity", 0.95);
     });
   }, [data]);
 
