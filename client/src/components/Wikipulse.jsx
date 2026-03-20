@@ -71,24 +71,23 @@ export default function Wikipulse() {
     data.forEach((d, i) => {
       const t = i / data.length;
 
-      const innerR = 10 + t * 200;
-      const outerR = innerR + 6;
+      const baseRadius = 10 + t * 200;
+      const thickness = 8;
 
       const startAngle = i * angleStep;
-      const endAngle = startAngle + angleStep * 0.9;
+      const endAngle = (i + 1) * angleStep;
 
       const n = normalize(d.views);
 
       const arc = d3.arc()
-        .innerRadius(innerR)
-        .outerRadius(outerR)
+        .innerRadius(baseRadius)
+        .outerRadius(baseRadius + thickness)
         .startAngle(startAngle)
         .endAngle(endAngle);
 
       g.append("path")
         .attr("d", arc)
-        .attr("fill", colorScale(n))
-        .attr("opacity", 0.95);
+        .attr("fill", colorScale(n));
     });
   }, [data]);
 
