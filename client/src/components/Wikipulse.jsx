@@ -67,27 +67,38 @@ export default function Wikipulse() {
     const normalize = (v) => (v - min) / (max - min || 1);
 
     const angleStep = 0.22;
+    const daysPerWeek = 7;
 
-    data.forEach((d, i) => {
-      const t = i / data.length;
+    const weeks = [];
+    for (let i = 0; i < data.length; i += daysPerWeek) {
+      weeks.push(data.slice(i, i + daysPerWeek));
+    }
+
+    weeks.forEach((week, weekIndex) => {
+      const t = weekIndex / weeks.length;
 
       const baseRadius = 10 + t * 200;
-      const thickness = 8;
+      const thickness = 12;
 
-      const startAngle = i * angleStep;
-      const endAngle = (i + 1) * angleStep;
+      const startAngle = weekIndex * angleStep * daysPerWeek;
+      const endAngle = startAngle + angleStep * daysPerWeek;
 
-      const n = normalize(d.views);
+      week.forEach((d, i) => {
+        const innerR = baseRadius + (i / daysPerWeek) * thickness;
+        const outerR = baseRadius + ((i + 1) / daysPerWeek) * thickness;
 
-      const arc = d3.arc()
-        .innerRadius(baseRadius)
-        .outerRadius(baseRadius + thickness)
-        .startAngle(startAngle)
-        .endAngle(endAngle);
+        const n = normalize(d.views);
 
-      g.append("path")
-        .attr("d", arc)
-        .attr("fill", colorScale(n));
+        const arc = d3.arc()
+          .innerRadius(innerR)
+          .outerRadius(outerR)
+          .startAngle(startAngle)
+          .endAngle(endAngle);
+
+        g.append("path")
+          .attr("d", arc)
+          .attr("fill", colorScale(n));
+      });
     });
   }, [data]);
 
