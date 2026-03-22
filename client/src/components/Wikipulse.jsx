@@ -2,6 +2,18 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 
+const baseURL =
+  "https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article";
+
+function getDayOfYear(ts) {
+  const y = ts.slice(0, 4);
+  const m = ts.slice(4, 6);
+  const d = ts.slice(6, 8);
+  const date = new Date(`${y}-${m}-${d}`);
+  const start = new Date(`${y}-01-01`);
+  return Math.floor((date - start) / (1000 * 60 * 60 * 24)) + 1;
+}
+
 export default function Wikipulse() {
   const [data, setData] = useState([]);
   const [monthly, setMonthly] = useState([]);
@@ -9,29 +21,33 @@ export default function Wikipulse() {
 
   useEffect(() => {
     fetch(
-      "https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/en.wikipedia/all-access/user/India/daily/2025010100/2025030100"
+      `${baseURL}/en.wikipedia/all-access/user/India/daily/2022010100/2025123100`
     )
       .then((res) => res.json())
       .then((res) => {
         const items = res.items || [];
-        setData(items);
+
+        const processed = items.map((d) => ({
+          views: d.views,
+          timestamp: d.timestamp,
+          dayOfYear: getDayOfYear(d.timestamp),
+          year: d.timestamp.slice(0, 4),
+        }));
+
+        setData(processed);
 
         const map = {};
-
         items.forEach((d) => {
           const key = `${d.timestamp.slice(0, 4)}-${d.timestamp.slice(4, 6)}`;
           if (!map[key]) map[key] = 0;
           map[key] += d.views;
         });
 
-        const result = Object.entries(map)
-          .map(([k, v]) => ({
-            month: k,
-            views: v,
-          }))
-          .sort((a, b) => new Date(a.month) - new Date(b.month));
-
-        setMonthly(result);
+        setMonthly(
+          Object.entries(map)
+            .map(([k, v]) => ({ month: k, views: v }))
+            .sort((a, b) => new Date(a.month) - new Date(b.month))
+        );
       })
       .catch(() => {
         setData([]);
@@ -45,59 +61,61 @@ export default function Wikipulse() {
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
-    const width = 500;
-    const height = 500;
-
-    const centerX = width / 2;
-    const centerY = height / 2;
+    const width = 600;
+    const height = 600;
 
     const g = svg
       .append("g")
-      .attr("transform", `translate(${centerX}, ${centerY})`);
+      .attr("transform", `translate(${width / 2}, ${height / 2})`);
 
     const values = data.map((d) => d.views);
-    const min = d3.min(values) || 0;
-    const max = d3.max(values) || 1;
+    const min = d3.min(values);
+    const max = d3.max(values);
+
+    const normalize = (v) => (v - min) / (max - min || 1);
 
     const colorScale = d3
       .scaleLinear()
       .domain([0, 0.5, 1])
-      .range(["#e8f1ff", "#6ba6ff", "#0b57d0"]);
+      .range(["#eae4f7", "#2e8fb8", "#0b1a48"]);
 
-    const normalize = (v) => (v - min) / (max - min || 1);
-
-    const angleStep = 0.22;
     const daysPerWeek = 7;
 
+    const sorted = [...data].sort((a, b) => {
+      if (a.year !== b.year) return a.year - b.year;
+      return a.dayOfYear - b.dayOfYear;
+    });
+
     const weeks = [];
-    for (let i = 0; i < data.length; i += daysPerWeek) {
-      weeks.push(data.slice(i, i + daysPerWeek));
+    for (let i = 0; i < sorted.length; i += daysPerWeek) {
+      weeks.push(sorted.slice(i, i + daysPerWeek));
     }
 
-    weeks.forEach((week, weekIndex) => {
-      const t = weekIndex / weeks.length;
+    const total = weeks.length;
 
-      const baseRadius = 10 + t * 200;
-      const thickness = 12;
+    weeks.forEach((week, i) => {
+      const t = i / total;
 
-      const startAngle = weekIndex * angleStep * daysPerWeek;
-      const endAngle = startAngle + angleStep * daysPerWeek;
+      const baseRadius = 20 + t * 250;
+      const thickness = 10;
 
-      week.forEach((d, i) => {
-        const innerR = baseRadius + (i / daysPerWeek) * thickness;
-        const outerR = baseRadius + ((i + 1) / daysPerWeek) * thickness;
+      const startAngle = t * Math.PI * 10;
+      const endAngle = startAngle + 0.4;
 
-        const n = normalize(d.views);
+      week.forEach((d, j) => {
+        const inner = baseRadius + (j / daysPerWeek) * thickness;
+        const outer = baseRadius + ((j + 1) / daysPerWeek) * thickness;
 
-        const arc = d3.arc()
-          .innerRadius(innerR)
-          .outerRadius(outerR)
+        const arc = d3
+          .arc()
+          .innerRadius(inner)
+          .outerRadius(outer)
           .startAngle(startAngle)
           .endAngle(endAngle);
 
         g.append("path")
           .attr("d", arc)
-          .attr("fill", colorScale(n));
+          .attr("fill", colorScale(normalize(d.views)));
       });
     });
   }, [data]);
@@ -120,7 +138,7 @@ export default function Wikipulse() {
         </div>
 
         <div className="wikipulse-right">
-          <svg ref={svgRef} width={500} height={500} />
+          <svg ref={svgRef} width={600} height={600} />
         </div>
       </div>
     </div>
