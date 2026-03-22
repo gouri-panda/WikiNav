@@ -14,6 +14,14 @@ function getDayOfYear(ts) {
   return Math.floor((date - start) / (1000 * 60 * 60 * 24)) + 1;
 }
 
+function dayLabel(year, day) {
+  const date = new Date(year, 0, day);
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+}
+
 export default function Wikipulse() {
   const [data, setData] = useState([]);
   const [monthly, setMonthly] = useState([]);
@@ -61,8 +69,8 @@ export default function Wikipulse() {
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
-    const width = 600;
-    const height = 600;
+    const width = 700;
+    const height = 700;
 
     const g = svg
       .append("g")
@@ -96,11 +104,11 @@ export default function Wikipulse() {
     weeks.forEach((week, i) => {
       const t = i / total;
 
-      const baseRadius = 20 + t * 250;
-      const thickness = 10;
+      const baseRadius = 30 + t * 300;
+      const thickness = 12;
 
-      const startAngle = t * Math.PI * 10;
-      const endAngle = startAngle + 0.4;
+      const startAngle = t * Math.PI * 12;
+      const endAngle = startAngle + 0.45;
 
       week.forEach((d, j) => {
         const inner = baseRadius + (j / daysPerWeek) * thickness;
@@ -115,8 +123,35 @@ export default function Wikipulse() {
 
         g.append("path")
           .attr("d", arc)
-          .attr("fill", colorScale(normalize(d.views)));
+          .attr("fill", colorScale(normalize(d.views)))
+          .append("title")
+          .text(
+            `${dayLabel(d.year, d.dayOfYear)} - ${d.views.toLocaleString()}`
+          );
       });
+    });
+
+    const legend = svg.append("g").attr("transform", `translate(20, 650)`);
+
+    const legendData = [
+      { label: "Low", value: 0 },
+      { label: "Medium", value: 0.5 },
+      { label: "High", value: 1 },
+    ];
+
+    legendData.forEach((d, i) => {
+      legend
+        .append("rect")
+        .attr("x", i * 120)
+        .attr("width", 20)
+        .attr("height", 20)
+        .attr("fill", colorScale(d.value));
+
+      legend
+        .append("text")
+        .attr("x", i * 120 + 30)
+        .attr("y", 15)
+        .text(d.label);
     });
   }, [data]);
 
@@ -138,7 +173,7 @@ export default function Wikipulse() {
         </div>
 
         <div className="wikipulse-right">
-          <svg ref={svgRef} width={600} height={600} />
+          <svg ref={svgRef} width={700} height={700} />
         </div>
       </div>
     </div>
