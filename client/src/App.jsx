@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React from 'react';
 import { withRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from 'react-query';
@@ -13,11 +14,11 @@ import SummaryTables from './components/SummaryTables';
 import TitleSearch from './components/TitleSearch';
 import TreeMap from './components/TreeMap';
 import Overview from './components/Overview';
+import PageViews from './components/PageViews';
 import Footer from './components/Footer';
 import TimeComparison from './components/TimeComparison';
-import Revisions from "./components/Revisions";
-import PageViews from "./components/PageViews";
-import Wikipulse from "./components/Wikipulse";
+import Revisions from './components/Revisions';
+import Wikipulse from './components/Wikipulse';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -67,9 +68,42 @@ const App = () => (
               their labels changes the selected title to that article.
             </span>
           </Instruction>
+          <Heading text="Revisions and Reverts" />
           <Revisions />
+          <Instruction className="paragraph">
+            <strong>Reading the chart: </strong>
+            <span>
+              Each bubble represents a language edition of the article, sized by
+              its page size in bytes. The number inside shows the total revision
+              count, with the revert count below it. The outer ring color
+              indicates the net size change over the selected period: green for
+              growth, red for shrinkage, and gray for no change.
+            </span>
+          </Instruction>
+                    <Heading text="Pageviews" />
           <PageViews />
+          <Instruction className="paragraph">
+            <strong>Reading the chart: </strong>
+            <span>
+              This bar chart shows daily pageview counts for the selected
+              article. The summary cards above display the total views, average
+              views per day, and the number of days tracked. Use the language
+              dropdown to compare pageviews across different language editions.
+            </span>
+          </Instruction>
+          <Heading text="WikiPulse" />
           <Wikipulse />
+          <Instruction className="paragraph">
+            <strong>Reading the chart: </strong>
+            <span>
+              The spiral chart shows daily pageviews over multiple years, with
+              each revolution representing one year. Brighter colors indicate
+              higher traffic and pink highlights mark traffic spikes. The
+              monthly trend shows aggregated views per month, and the weekly
+              pulse shows relative traffic for each day of the week compared to
+              the overall average.
+            </span>
+          </Instruction>
           <Heading text="Sources of Traffic" />
           <TreeMap />
           <Instruction className="paragraph">
@@ -93,8 +127,7 @@ const App = () => (
               article in the clickstream dump from the previous month.
             </span>
           </Instruction>
-          <Heading text="Comparison Across Languages" />
-          <LanguageComparison />
+        
           <Instruction className="paragraph">
             <strong>Reading the charts: </strong>
             <span>

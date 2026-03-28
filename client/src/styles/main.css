@@ -219,7 +219,184 @@ a {
 .sankey-controls {
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing1);
+  padding: var(--spacing0) var(--spacing1);
+  background: linear-gradient(180deg, #f8fbfe 0%, #eef6fc 100%);
+  border: 1px solid rgba(6, 112, 222, 0.12);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(6, 112, 222, 0.08);
   margin-bottom: var(--spacing0);
+}
+.sankey-controls-left {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.sankey-controls-right {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing0);
+  flex-shrink: 0;
+}
+.sankey-download-button {
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #0670de 0%, #0d8af0 100%);
+  color: #fff;
+  font-family: var(--font-family-sans-serif);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  box-shadow: 0 10px 20px rgba(6, 112, 222, 0.22);
+  transition: transform 120ms ease, box-shadow 120ms ease, opacity 120ms ease;
+}
+.sankey-download-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 26px rgba(6, 112, 222, 0.28);
+}
+.sankey-download-button:active {
+  transform: translateY(0);
+  box-shadow: 0 8px 18px rgba(6, 112, 222, 0.2);
+}
+.sankey-download-button:focus-visible {
+  outline: 2px solid rgba(6, 112, 222, 0.3);
+  outline-offset: 2px;
+}
+.pageviews-container {
+  margin-top: var(--spacing1);
+}
+.pageviews-toolbar {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  background: linear-gradient(180deg, #f8fbfe 0%, #eef6fc 100%);
+  border: 1px solid rgba(6, 112, 222, 0.12);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(6, 112, 222, 0.08);
+}
+.pageviews-control-group {
+  min-width: 220px;
+  flex: 1;
+}
+.pageviews-select {
+  min-width: 220px;
+}
+.pageviews-custom-range {
+  margin-left: auto;
+}
+.pageviews-summary {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+.pageviews-chart {
+  width: 100%;
+  height: 65vh;
+  max-height: 520px;
+  background-color: var(--color-blue0);
+  border-radius: 8px;
+  padding: var(--spacing0);
+}
+.revisions-container {
+  margin-top: var(--spacing1);
+}
+.revisions-toolbar {
+  margin-bottom: var(--spacing1);
+}
+.revisions-period-panel {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  width: 100%;
+  padding: 12px 14px;
+  background: linear-gradient(180deg, #f8fbfe 0%, #eef6fc 100%);
+  border: 1px solid rgba(6, 112, 222, 0.12);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(6, 112, 222, 0.08);
+}
+.revisions-control-group {
+  min-width: 220px;
+  flex: 1;
+}
+.revisions-time-group {
+  max-width: 360px;
+}
+.revisions-period-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: var(--font-size-small);
+  font-weight: 600;
+  color: var(--color-gray2);
+}
+.revisions-language-select .basic-multi-select,
+.revisions-language-select .select__control {
+  min-height: 38px;
+}
+.revisions-period-select,
+.revisions-date-input {
+  appearance: none;
+  border: 1px solid #b7cadf;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--color-gray2);
+  font-family: var(--font-family-sans-serif);
+  font-size: 14px;
+  line-height: 1.2;
+  padding: 9px 12px;
+}
+.revisions-period-select:focus,
+.revisions-date-input:focus {
+  outline: 2px solid rgba(6, 112, 222, 0.28);
+  outline-offset: 1px;
+  border-color: #76aee4;
+}
+.revisions-custom-range {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.revisions-status {
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  font-size: var(--font-size-small);
+}
+.revisions-status-error {
+  background: #ffebee;
+  color: #b71c1c;
+}
+.revisions-status-info {
+  background: #e7f3ff;
+  color: #0b4f93;
+}
+.revisions-status-warning {
+  background: #fff4e5;
+  color: #8a4f00;
+}
+.revisions-progress {
+  width: 100%;
+  margin-top: 8px;
+}
+.revisions-chart {
+  width: 100%;
+  background-color: var(--color-blue0);
+  border-radius: 8px;
+  padding: var(--spacing0);
+}
+.revisions-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.toggle-label {
+  color: var(--color-gray2);
 }
 .redirect {
   color: var(--color-gray1);
@@ -373,6 +550,52 @@ a {
   .controls {
     grid-template-columns: 1fr;
   }
+  .sankey-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .sankey-controls-left {
+    align-items: flex-start;
+  }
+  .sankey-controls-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .sankey-download-button {
+    flex: 1;
+    min-width: 120px;
+  }
+  .revisions-toolbar .sankey-download-button {
+    width: 100%;
+  }
+  .revisions-period-panel {
+    width: 100%;
+    align-items: stretch;
+  }
+  .revisions-control-group,
+  .revisions-time-group {
+    min-width: 100%;
+    max-width: 100%;
+  }
+  .revisions-custom-range {
+    width: 100%;
+  }
+  .revisions-date-input {
+    flex: 1 1 150px;
+  }
+  .pageviews-control-group {
+    min-width: 100%;
+  }
+  .pageviews-select {
+    min-width: 100%;
+  }
+  .pageviews-custom-range {
+    margin-left: 0;
+    width: 100%;
+  }
+  .pageviews-chart {
+    height: 60vh;
+  }
 }
 @media (min-width: 768px) {
   .instruction {
@@ -513,8 +736,9 @@ a {
   margin: 0;
   color: var(--color-gray2);
 }
+
 @media (max-width: 1024px) {
-    .wikipulse-grid {
+  .wikipulse-grid {
     grid-template-columns: 1fr;
   }
   .controls-container {

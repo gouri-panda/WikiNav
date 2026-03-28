@@ -7,7 +7,8 @@ import { useSearchState } from "../searchStateContext";
 import Loader from "./Loader";
 
 const width = 1000;
-const height = 500;
+const baseHeight = 700;
+const extraHeightPerNode = 65;
 const fixedLangOption = { value: "enwiki", label: "enwiki", isFixed: true };
 
 function formatWikiDomain(wikiKey) {
@@ -71,6 +72,12 @@ export default function WikiLanguageViz() {
     const [customStart, setCustomStart] = useState("");
     const [customEnd, setCustomEnd] = useState("");
     const [periodError, setPeriodError] = useState("");
+
+    const chartHeight = useMemo(() => {
+        const nodeCount = Math.max(data.length, 1);
+        const extraNodes = Math.max(0, nodeCount - 6);
+        return baseHeight + (extraNodes * extraHeightPerNode);
+    }, [data.length]);
 
     function fontScale(r, min, max, factor) {
         return Math.max(min, Math.min(max, r * factor));
@@ -162,7 +169,6 @@ export default function WikiLanguageViz() {
                 }
                 return acc;
             }, {});
-
             if (!mappedTitles[fixedLangOption.value] && article && language && language !== "en") {
                 try {
                     const encodedTitle = encodeURIComponent(article);
@@ -385,7 +391,11 @@ export default function WikiLanguageViz() {
         }
 
         const centerX = width / 2;
-        const centerY = height / 2;
+        const centerY = chartHeight / 2;
+        const maxOrbitRadius = Math.max(
+            180,
+            Math.min((width / 2) - 130, (chartHeight / 2) - 90)
+        );
 
         const maxSize = d3.max(data, d => d.size);
 
@@ -393,7 +403,10 @@ export default function WikiLanguageViz() {
             .domain([0, maxSize])
             .range([35, 110]);
 
-        [80, 120, 160, 200, 240].forEach(r => {
+        const ringCount = 5;
+        const ringStep = maxOrbitRadius / ringCount;
+
+        Array.from({ length: ringCount }, (_, i) => ringStep * (i + 1)).forEach(r => {
 
             svg.append("circle")
                 .attr("cx", centerX)
@@ -422,6 +435,12 @@ export default function WikiLanguageViz() {
             ...d,
             r: rScale(d.size)
         }));
+        const getDeltaRingFill = (value) => {
+            if (value < 0) return "#c62828";
+            if (value === 0) return "#6b7280";
+            return "#c8d87a";
+        };
+
 
         const node = svg.selectAll("g")
             .data(nodes)
@@ -430,7 +449,7 @@ export default function WikiLanguageViz() {
 
         node.append("circle")
             .attr("r", d => d.r + 6)
-            .attr("fill", "#c8d87a");
+            .attr("fill", d => getDeltaRingFill(d.revertSize ?? 0));
 
         node.append("circle")
             .attr("r", d => d.r)
@@ -496,7 +515,6 @@ export default function WikiLanguageViz() {
                 .attr("y1", 0)
                 .attr("x2", d => d.r + 35)
                 .attr("y2", -5);
-            
             node.select(".size")
                 .text(d => d.size.toLocaleString())
                 .attr("x", d => d.r + 40)
@@ -516,18 +534,24 @@ export default function WikiLanguageViz() {
                 .attr("x", -15)
                 .attr("y", d => d.r + 35)
                 .style("font-size", "12px")
-                .style("fill", "#2e7d32");
+                .style("fill", d => {
+                    const v = d.revertSize ?? 0;
+                    if (v < 0) return "#c62828";
+                    if (v === 0) return "#6b7280";
+                    return "#2e7d32";
+                });
+
         }
 
         const simulation = d3.forceSimulation(nodes)
             .force("center", d3.forceCenter(centerX, centerY))
             .force("collision", d3.forceCollide().radius(d => d.r + 10))
-            .force("radial", d3.forceRadial(200, centerX, centerY).strength(.8))
+            .force("radial", d3.forceRadial(maxOrbitRadius * 0.82, centerX, centerY).strength(.8))
             .on("tick", ticked);
+
         return () => simulation.stop();
 
-    }, [data]);
-
+    }, [data, chartHeight]);
     function addLang(lang) {
         setSelected((prev) => {
             if (prev.includes(lang)) return prev;
@@ -673,12 +697,13 @@ export default function WikiLanguageViz() {
                     ref={svgRef}
                     className="revisions-svg"
                     width={width}
-                    height={height}
-                    viewBox={`0 0 ${width} ${height}`}
+                    height={chartHeight}
+                    viewBox={`0 0 ${width} ${chartHeight}`}
                     preserveAspectRatio="xMidYMid meet"
                 />
             </div>
 
         </div>
     );
+
 }
