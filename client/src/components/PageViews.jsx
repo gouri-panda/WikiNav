@@ -54,9 +54,11 @@ const buildLanguageLabel = (code, localizedTitle, isCurrent = false) => {
 };
 
 const PageViews = () => {
-	const [{ language, title }] = useSearchState();
-	const [selectedRange, setSelectedRange] = useState(rangeOptions[1].value);
-	const [selectedLanguage, setSelectedLanguage] = useState(language);
+const [{ language, title }] = useSearchState();
+const [selectedRange, setSelectedRange] = useState(rangeOptions[1].value);
+const [selectedLanguage, setSelectedLanguage] = useState(language);
+const [downloadType, setDownloadType] = useState('png');
+const plotRef = React.useRef();
 
 	const defaultEndDate = toDateInputValue(getYesterday());
 	const defaultStartDate = getPresetStartDate(90, defaultEndDate);
@@ -265,64 +267,93 @@ const PageViews = () => {
 			) : null}
 
 			{!isDailyViewsLoading && dailyViews?.length ? (
-				<div className="pageviews-chart">
-					<Plot
-						data={[
-							{
-								type: 'bar',
-								x: dayLabels,
-								y: dailyViews.map(({ views }) => views),
-								marker: {
-									color: '#a6cee3',
+				<>
+					<div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8, margin: '8px 0 4px 0' }}>
+						<button
+							onClick={async () => {
+								if (!plotRef.current) return;
+								const format = downloadType;
+								const dataUrl = await window.Plotly.toImage(plotRef.current, { format, width: 900, height: 400, scale: 2 });
+								const a = document.createElement('a');
+								a.href = dataUrl;
+								a.download = `pageviews.${format}`;
+								a.click();
+							}}
+							className="sankey-download-button"
+							title={`Download as ${downloadType.toUpperCase()}`}
+						>
+							Download
+						</button>
+						<button
+							type="button"
+							className="sankey-download-button"
+							style={{ minWidth: 80, fontSize: 14, fontWeight: 600, padding: '10px 18px' }}
+							aria-pressed={downloadType === 'svg'}
+							onClick={() => setDownloadType(downloadType === 'png' ? 'svg' : 'png')}
+							title={downloadType === 'png' ? 'Switch to SVG' : 'Switch to PNG'}
+						>
+							{downloadType === 'png' ? 'PNG' : 'SVG'}
+						</button>
+					</div>
+					<div className="pageviews-chart">
+						<Plot
+							ref={plotRef}
+							data={[
+								{
+									type: 'bar',
+									x: dayLabels,
+									y: dailyViews.map(({ views }) => views),
+									marker: {
+										color: '#a6cee3',
+									},
+									hovertemplate: '<b>%{x}</b><br>%{y} views<extra></extra>',
 								},
-								hovertemplate: '<b>%{x}</b><br>%{y} views<extra></extra>',
-							},
-						]}
-						layout={{
-							autosize: true,
-							margin: {
-								l: 60,
-								r: 10,
-								t: 10,
-								b: 80,
-							},
-							xaxis: {
-								tickangle: -45,
-								tickmode: 'array',
-								tickvals: tickDates,
-								ticktext: tickTexts,
-								automargin: true,
-								title: {
-									text: 'Date',
+							]}
+							layout={{
+								autosize: true,
+								margin: {
+									l: 60,
+									r: 10,
+									t: 10,
+									b: 80,
 								},
-							},
-							yaxis: {
-								title: {
-									text: 'Pageviews',
+								xaxis: {
+									tickangle: -45,
+									tickmode: 'array',
+									tickvals: tickDates,
+									ticktext: tickTexts,
+									automargin: true,
+									title: {
+										text: 'Date',
+									},
 								},
-							},
-							paper_bgcolor: 'rgba(0,0,0,0)',
-							plot_bgcolor: '#f2f9fe',
-							bargap: 0.15,
-							showlegend: false,
-						}}
-						config={{
-							displaylogo: false,
-							modeBarButtonsToRemove: [
-								'lasso2d',
-								'select2d',
-								'hoverClosestCartesian',
-								'hoverCompareCartesian',
-								'autoScale2d',
-							],
-							responsive: true,
-						}}
-						useResizeHandler
-						style={{ width: '100%', height: '100%' }}
-					/>
-				</div>
+								yaxis: {
+									title: { text: 'Pageviews' },
+								},
+								paper_bgcolor: 'rgba(0,0,0,0)',
+								plot_bgcolor: '#f2f9fe',
+								bargap: 0.15,
+								showlegend: false,
+							}}
+							config={{
+								displaylogo: false,
+								modeBarButtonsToRemove: [
+									'lasso2d',
+									'select2d',
+									'hoverClosestCartesian',
+									'hoverCompareCartesian',
+									'autoScale2d',
+								],
+								responsive: true,
+							}}
+							useResizeHandler
+							style={{ width: '100%', height: '100%' }}
+						/>
+					</div>
+				</>
 			) : null}
-		</div>
+				</div>
+			
 	);
 };
 

@@ -187,8 +187,61 @@ function dayToDateLabel(year, dayOfYear) {
 	});
 }
 
-function SpiralChart({ data }) {
+const SpiralChart = React.forwardRef(function SpiralChart({ data }, ref) {
 	const svgRef = useRef(null);
+
+	React.useImperativeHandle(ref, () => ({
+		downloadSVG: () => {
+			if (!svgRef.current) return;
+			const serializer = new XMLSerializer();
+			let source = serializer.serializeToString(svgRef.current);
+			if (!source.match(/^<svg/)) {
+				source = '<svg ' + source.substring(source.indexOf('<svg ') + 5);
+			}
+			const svgBlob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
+			const url = URL.createObjectURL(svgBlob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = 'wikipulse-spiral.svg';
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			URL.revokeObjectURL(url);
+		},
+		downloadPNG: () => {
+			if (!svgRef.current) return;
+			const serializer = new XMLSerializer();
+			let source = serializer.serializeToString(svgRef.current);
+			if (!source.match(/^<svg/)) {
+				source = '<svg ' + source.substring(source.indexOf('<svg ') + 5);
+			}
+			const svg64 = btoa(unescape(encodeURIComponent(source)));
+			const image64 = 'data:image/svg+xml;base64,' + svg64;
+			const img = new window.Image();
+			const width = svgRef.current.width.baseVal.value || 600;
+			const height = svgRef.current.height.baseVal.value || 600;
+			img.onload = function () {
+				const canvas = document.createElement('canvas');
+				canvas.width = width;
+				canvas.height = height;
+				const ctx = canvas.getContext('2d');
+				ctx.fillStyle = '#fff';
+				ctx.fillRect(0, 0, width, height);
+				ctx.drawImage(img, 0, 0, width, height);
+				canvas.toBlob(function (blob) {
+					const url = URL.createObjectURL(blob);
+					const a = document.createElement('a');
+					a.href = url;
+					a.download = 'wikipulse-spiral.png';
+					document.body.appendChild(a);
+					a.click();
+					document.body.removeChild(a);
+					URL.revokeObjectURL(url);
+				}, 'image/png');
+			};
+			img.src = image64;
+		},
+	}));
 
 	useEffect(() => {
 		if (!data || !svgRef.current) return;
@@ -378,7 +431,8 @@ function SpiralChart({ data }) {
 	}, [data]);
 
 	return <svg ref={svgRef} />;
-}
+});
+
 
 export default function WikiPulse() {
 	const [{ language, title }] = useSearchState();
@@ -415,6 +469,9 @@ export default function WikiPulse() {
 	);
 
 	const isLoading = yearlyLoading || weeklyLoading || monthlyLoading || statsLoading || summaryLoading;
+
+	const spiralRef = React.useRef();
+	const [downloadType, setDownloadType] = React.useState('png');
 
 	if (isLoading) {
 		return <Loader />;
@@ -485,6 +542,14 @@ export default function WikiPulse() {
 
 	const readableTitle = denormalize(article);
 
+	const handleDownload = () => {
+		if (downloadType === 'svg') {
+			spiralRef.current?.downloadSVG();
+		} else {
+			spiralRef.current?.downloadPNG();
+		}
+	};
+
 	return (
 		<div className="wikipulse-wrapper">
 			<div className="wikipulse-grid">
@@ -543,7 +608,20 @@ export default function WikiPulse() {
 
 				<div className="wikipulse-right">
 					<h3 className="wikipulse-right-title">Yearly seasonality</h3>
-					<SpiralChart data={yearlyData} />
+					<div className="wikipulse-toolbar" style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', margin: '8px 0 12px 0', gap: 8 }}>
+						<button onClick={handleDownload} className="sankey-download-button" title={`Download Spiral as ${downloadType.toUpperCase()}`}>Download</button>
+						<button
+							type="button"
+							className="sankey-download-button"
+							style={{ marginLeft: 8, minWidth: 80, fontSize: 14, fontWeight: 600, padding: '10px 18px' }}
+							aria-pressed={downloadType === 'svg'}
+							onClick={() => setDownloadType(downloadType === 'png' ? 'svg' : 'png')}
+							title={downloadType === 'png' ? 'Switch to SVG' : 'Switch to PNG'}
+						>
+							{downloadType === 'png' ? 'PNG' : 'SVG'}
+						</button>
+					</div>
+					<SpiralChart ref={spiralRef} data={yearlyData} />
 				</div>
 			</div>
 		</div>
