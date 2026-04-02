@@ -127,7 +127,8 @@ const App = () => (
               article in the clickstream dump from the previous month.
             </span>
           </Instruction>
-        
+           <Heading text="Comparison Across Languages" />
+          <LanguageComparison />
           <Instruction className="paragraph">
             <strong>Reading the charts: </strong>
             <span>

@@ -559,7 +559,7 @@ export default function WikiLanguageViz() {
         });
     }
 
-    const [downloadType, setDownloadType] = useState('svg');
+    const [downloadType, setDownloadType] = useState('png');
 
     function download() {
         const svg = svgRef.current;
