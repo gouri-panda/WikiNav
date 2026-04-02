@@ -49,14 +49,9 @@ const HorizontalBar = forwardRef(({ data, keys }, ref) => {
           legendPosition: 'middle',
           legendOffset: -50,
           format: (v) =>
-            v.length > 12 ? (
-              <tspan>
-                {`${v.substring(0, 12)}...`}
-                <title>{v}</title>
-              </tspan>
-            ) : (
-              v
-            ),
+            typeof v === 'string' && v.length > 12
+              ? `${v.substring(0, 12)}...`
+              : v,
         }}
         enableGridX
         enableGridY={false}
