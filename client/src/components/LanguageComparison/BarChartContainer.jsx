@@ -18,6 +18,7 @@ const BarChartContainer = ({
   clickstream,
   selectedOptions,
   limit = 10,
+  showRealNumbers = false,
 }) => {
   const limitedClickstream = clickstream?.slice(0, limit);
   const clickstreamViews = sumClickstream(clickstream);
@@ -42,7 +43,7 @@ const BarChartContainer = ({
   const chartData = limitedClickstream.map(({ title, views }) => {
     const dataPoint = {
       title,
-      [language]: percentageOfViews(views, clickstreamViews),
+      [language]: showRealNumbers ? (views ?? 0) : percentageOfViews(views, clickstreamViews),
     };
     selectedOptions?.forEach(({ language }, idx) => {
       const titleInLanguage = selectedLanguageTitles[idx].data?.find(
@@ -51,10 +52,9 @@ const BarChartContainer = ({
       const titleViews = selectedLanguageClickstream[idx].data?.find(
         (s) => s.title === (titleInLanguage ?? title)
       )?.views;
-      dataPoint[language] = percentageOfViews(
-        titleViews,
-        selectedLanguageViews[idx]
-      );
+      dataPoint[language] = showRealNumbers
+        ? (titleViews ?? 0)
+        : percentageOfViews(titleViews, selectedLanguageViews[idx]);
     });
     return dataPoint;
   });

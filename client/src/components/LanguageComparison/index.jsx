@@ -6,6 +6,7 @@ import useDestinations from '../../hooks/useDestinations';
 import useTitleinLanguages from '../../hooks/useTitleInLanguages';
 import useClickstreamMetadata from '../../hooks/useClickstreamMetadata';
 import Select from 'react-select';
+import Toggle from 'react-toggle';
 import MultiSelect from './MultiSelect';
 import Loader from '../Loader';
 import BarChartContainer from './BarChartContainer';
@@ -87,6 +88,7 @@ const LanguageComparison = () => {
   } = useTitleinLanguages(language, title, getLanguageValues(languages));
   const [selectedOptions, setSelectedOptions] = useState();
   const [limit, setLimit] = useState(10);
+  const [showRealNumbers, setShowRealNumbers] = useState(false);
 
   useEffect(() => setSelectedOptions([]), [language, title]);
 
@@ -137,6 +139,15 @@ const LanguageComparison = () => {
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h3 className="subsection-text" style={{ margin: 0 }}>Incoming Pageviews</h3>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Toggle
+            className="toggle"
+            id="show-real-numbers-lang"
+            defaultChecked={showRealNumbers}
+            icons={false}
+            onChange={() => setShowRealNumbers(!showRealNumbers)}
+          />
+          <span className="toggle-label">Show real numbers</span>
         <Select
           className="limit-select"
           options={limitOptions}
@@ -144,6 +155,7 @@ const LanguageComparison = () => {
           defaultValue={limitOptions.find(({ value }) => value === limit)}
           isSearchable={false}
         />
+        </div>
       </div>
       <div className="comparison-container">
         <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8, margin: '8px 0 4px 0' }}>
@@ -173,9 +185,10 @@ const LanguageComparison = () => {
             clickstream={sources}
             selectedOptions={selectedOptions}
             limit={limit}
+            showRealNumbers={showRealNumbers}
           />
         </div>
-        <div className="barchart-label">Percentage of Incoming Pageviews</div>
+        <div className="barchart-label">{showRealNumbers ? 'Incoming Pageviews' : 'Percentage of Incoming Pageviews'}</div>
       </div>
       <h3 className="subsection-text">Outgoing Pageviews</h3>
       <div className="comparison-container">
@@ -206,9 +219,10 @@ const LanguageComparison = () => {
             clickstream={destinations}
             selectedOptions={selectedOptions}
             limit={limit}
+            showRealNumbers={showRealNumbers}
           />
         </div>
-        <div className="barchart-label">Percentage of Outgoing Pageviews</div>
+        <div className="barchart-label">{showRealNumbers ? 'Outgoing Pageviews' : 'Percentage of Outgoing Pageviews'}</div>
       </div>
     </>
   );

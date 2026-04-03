@@ -8,6 +8,7 @@ import Error from './Error';
 import HorizontalBar from './HorizontalBar';
 import React, { useRef, useState } from 'react';
 import Select from 'react-select';
+import Toggle from 'react-toggle';
 import { sumClickstream, round } from '../utils';
 
 const limitOptions = [
@@ -35,6 +36,7 @@ const TimeComparison = () => {
   const [downloadTypeIncoming, setDownloadTypeIncoming] = useState('png');
   const [downloadTypeOutgoing, setDownloadTypeOutgoing] = useState('png');
   const [limit, setLimit] = useState(10);
+  const [showRealNumbers, setShowRealNumbers] = useState(false);
   const incomingRef = useRef();
   const outgoingRef = useRef();
 
@@ -84,14 +86,21 @@ const TimeComparison = () => {
   const getChartData = (currentClickstream, oldClickstream) => {
     const currentClickstreamViews = sumClickstream(currentClickstream);
     const oldClickstreamViews = sumClickstream(oldClickstream);
-    return currentClickstream.slice(0, limit).map(({ title, views }) => ({
-      title,
-      [month]: percentageOfViews(views, currentClickstreamViews),
-      [previousMonth]: percentageOfViews(
-        oldClickstream.find((c) => c.title === title)?.views,
-        oldClickstreamViews
-      ),
-    }));
+    return currentClickstream.slice(0, limit).map(({ title, views }) => {
+      const oldViews = oldClickstream.find((c) => c.title === title)?.views;
+      if (showRealNumbers) {
+        return {
+          title,
+          [month]: views ?? 0,
+          [previousMonth]: oldViews ?? 0,
+        };
+      }
+      return {
+        title,
+        [month]: percentageOfViews(views, currentClickstreamViews),
+        [previousMonth]: percentageOfViews(oldViews, oldClickstreamViews),
+      };
+    });
   };
 
   const chartDataIncoming = getChartData(sources, oldSources);
@@ -144,6 +153,15 @@ const TimeComparison = () => {
     <>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h3 className="subsection-text" style={{ margin: 0 }}>Incoming Pageviews</h3>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Toggle
+            className="toggle"
+            id="show-real-numbers-time"
+            defaultChecked={showRealNumbers}
+            icons={false}
+            onChange={() => setShowRealNumbers(!showRealNumbers)}
+          />
+          <span className="toggle-label">Show real numbers</span>
         <Select
           className="limit-select"
           options={limitOptions}
@@ -151,6 +169,7 @@ const TimeComparison = () => {
           defaultValue={limitOptions.find(({ value }) => value === limit)}
           isSearchable={false}
         />
+        </div>
       </div>
       <div className="comparison-container">
         <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8, margin: '8px 0 4px 0' }}>
@@ -175,7 +194,7 @@ const TimeComparison = () => {
         <div className="barchart">
           <HorizontalBar ref={incomingRef} data={chartDataIncoming} keys={keys} />
         </div>
-        <p className="barchart-label">Percentage of Incoming Pageviews</p>
+        <p className="barchart-label">{showRealNumbers ? 'Incoming Pageviews' : 'Percentage of Incoming Pageviews'}</p>
       </div>
       <h3 className="subsection-text">Outgoing Pageviews</h3>
       <div className="comparison-container">
@@ -201,7 +220,7 @@ const TimeComparison = () => {
         <div className="barchart">
           <HorizontalBar ref={outgoingRef} data={chartDataOutgoing} keys={keys} />
         </div>
-        <p className="barchart-label">Percentage of Outgoing Pageviews</p>
+        <p className="barchart-label">{showRealNumbers ? 'Outgoing Pageviews' : 'Percentage of Outgoing Pageviews'}</p>
       </div>
     </>
   );
