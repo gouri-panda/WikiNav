@@ -7,7 +7,13 @@ import Loader from './Loader';
 import Error from './Error';
 import HorizontalBar from './HorizontalBar';
 import React, { useRef, useState } from 'react';
+import Select from 'react-select';
 import { sumClickstream, round } from '../utils';
+
+const limitOptions = [
+  { value: 10, label: 'top 10' },
+  { value: 20, label: 'top 20' },
+];
 
 const getMonth = (date) => {
   const month = date.getMonth() + 1;
@@ -28,6 +34,7 @@ const getPreviousMonth = (month) => {
 const TimeComparison = () => {
   const [downloadTypeIncoming, setDownloadTypeIncoming] = useState('png');
   const [downloadTypeOutgoing, setDownloadTypeOutgoing] = useState('png');
+  const [limit, setLimit] = useState(10);
   const incomingRef = useRef();
   const outgoingRef = useRef();
 
@@ -74,7 +81,6 @@ const TimeComparison = () => {
     return <Error />;
   }
 
-  const limit = 10;
   const getChartData = (currentClickstream, oldClickstream) => {
     const currentClickstreamViews = sumClickstream(currentClickstream);
     const oldClickstreamViews = sumClickstream(oldClickstream);
@@ -136,7 +142,16 @@ const TimeComparison = () => {
 
   return (
     <>
-      <h3 className="subsection-text">Incoming Pageviews</h3>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h3 className="subsection-text" style={{ margin: 0 }}>Incoming Pageviews</h3>
+        <Select
+          className="limit-select"
+          options={limitOptions}
+          onChange={(o) => setLimit(o.value)}
+          defaultValue={limitOptions.find(({ value }) => value === limit)}
+          isSearchable={false}
+        />
+      </div>
       <div className="comparison-container">
         <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8, margin: '8px 0 4px 0' }}>
           <button

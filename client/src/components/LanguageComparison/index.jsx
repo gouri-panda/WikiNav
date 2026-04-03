@@ -5,11 +5,17 @@ import useSources from '../../hooks/useSources';
 import useDestinations from '../../hooks/useDestinations';
 import useTitleinLanguages from '../../hooks/useTitleInLanguages';
 import useClickstreamMetadata from '../../hooks/useClickstreamMetadata';
+import Select from 'react-select';
 import MultiSelect from './MultiSelect';
 import Loader from '../Loader';
 import BarChartContainer from './BarChartContainer';
 import { directions } from '../../utils';
 import Error from '../Error';
+
+const limitOptions = [
+  { value: 10, label: 'top 10' },
+  { value: 20, label: 'top 20' },
+];
 
 export const getLanguageValues = (languages) =>
   languages?.map(({ value }) => value);
@@ -80,6 +86,7 @@ const LanguageComparison = () => {
     data: titleInLanguages,
   } = useTitleinLanguages(language, title, getLanguageValues(languages));
   const [selectedOptions, setSelectedOptions] = useState();
+  const [limit, setLimit] = useState(10);
 
   useEffect(() => setSelectedOptions([]), [language, title]);
 
@@ -128,7 +135,16 @@ const LanguageComparison = () => {
           options={otherLanguages}
         />
       </div>
-      <h3 className="subsection-text">Incoming Pageviews</h3>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h3 className="subsection-text" style={{ margin: 0 }}>Incoming Pageviews</h3>
+        <Select
+          className="limit-select"
+          options={limitOptions}
+          onChange={(o) => setLimit(o.value)}
+          defaultValue={limitOptions.find(({ value }) => value === limit)}
+          isSearchable={false}
+        />
+      </div>
       <div className="comparison-container">
         <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8, margin: '8px 0 4px 0' }}>
           <button
@@ -156,6 +172,7 @@ const LanguageComparison = () => {
             direction={directions.SOURCES}
             clickstream={sources}
             selectedOptions={selectedOptions}
+            limit={limit}
           />
         </div>
         <div className="barchart-label">Percentage of Incoming Pageviews</div>
@@ -188,6 +205,7 @@ const LanguageComparison = () => {
             direction={directions.DESTINATIONS}
             clickstream={destinations}
             selectedOptions={selectedOptions}
+            limit={limit}
           />
         </div>
         <div className="barchart-label">Percentage of Outgoing Pageviews</div>

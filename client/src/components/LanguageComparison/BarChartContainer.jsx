@@ -17,8 +17,8 @@ const BarChartContainer = ({
   direction,
   clickstream,
   selectedOptions,
+  limit = 10,
 }) => {
-  const limit = 10;
   const limitedClickstream = clickstream?.slice(0, limit);
   const clickstreamViews = sumClickstream(clickstream);
 
