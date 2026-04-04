@@ -275,9 +275,13 @@ export default function WikiLanguageViz() {
             ]);
 
             if (revs.length === 0 && sizeAtEnd === null && sizeAtStart === null) {
-
-                setMissing(m => [...m, lang]);
-                return null;
+                return {
+                    lang,
+                    revisions: 0,
+                    reverts: 0,
+                    size: 0,
+                    revertSize: 0
+                };
             }
 
             const revisions = revs.length;
@@ -303,7 +307,8 @@ export default function WikiLanguageViz() {
                 revertSize
             };
 
-        } catch {
+        } catch (err) {
+            console.error(`fetchLanguage failed for ${lang}:`, err);
             setMissing(m => [...m, lang]);
             return null;
         }
