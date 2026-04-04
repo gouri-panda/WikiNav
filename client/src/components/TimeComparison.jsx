@@ -9,7 +9,7 @@ import HorizontalBar from './HorizontalBar';
 import React, { useRef, useState } from 'react';
 import Select from 'react-select';
 import Toggle from 'react-toggle';
-import { sumClickstream, round } from '../utils';
+import { sumClickstream, round, getNonReferrerSources } from '../utils';
 
 const limitOptions = [
   { value: 10, label: 'top 10' },
@@ -37,6 +37,7 @@ const TimeComparison = () => {
   const [downloadTypeOutgoing, setDownloadTypeOutgoing] = useState('png');
   const [limit, setLimit] = useState(10);
   const [showRealNumbers, setShowRealNumbers] = useState(false);
+  const [includeOther, setIncludeOther] = useState(true);
   const incomingRef = useRef();
   const outgoingRef = useRef();
 
@@ -103,7 +104,9 @@ const TimeComparison = () => {
     });
   };
 
-  const chartDataIncoming = getChartData(sources, oldSources);
+  const filteredSources = includeOther ? sources : getNonReferrerSources(sources);
+  const filteredOldSources = includeOther ? oldSources : getNonReferrerSources(oldSources);
+  const chartDataIncoming = getChartData(filteredSources, filteredOldSources);
   const chartDataOutgoing = getChartData(destinations, oldDestinations);
   const keys = [month, previousMonth];
 
@@ -151,8 +154,19 @@ const TimeComparison = () => {
 
   return (
     <>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h3 className="subsection-text" style={{ margin: 0 }}>Incoming Pageviews</h3>
+      <div className="sankey-controls">
+        <div>
+          <Toggle
+            className="toggle"
+            id="include-other-time"
+            defaultChecked={includeOther}
+            icons={false}
+            onChange={() => setIncludeOther(!includeOther)}
+          />
+          <span className="toggle-label">
+            Include views from sources other than Wiki articles
+          </span>
+        </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Toggle
             className="toggle"
@@ -162,15 +176,16 @@ const TimeComparison = () => {
             onChange={() => setShowRealNumbers(!showRealNumbers)}
           />
           <span className="toggle-label">Show real numbers</span>
-        <Select
-          className="limit-select"
-          options={limitOptions}
-          onChange={(o) => setLimit(o.value)}
-          defaultValue={limitOptions.find(({ value }) => value === limit)}
-          isSearchable={false}
-        />
+          <Select
+            className="limit-select"
+            options={limitOptions}
+            onChange={(o) => setLimit(o.value)}
+            defaultValue={limitOptions.find(({ value }) => value === limit)}
+            isSearchable={false}
+          />
         </div>
       </div>
+      <h3 className="subsection-text">Incoming Pageviews</h3>
       <div className="comparison-container">
         <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8, margin: '8px 0 4px 0' }}>
           <button

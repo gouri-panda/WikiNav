@@ -10,7 +10,7 @@ import Toggle from 'react-toggle';
 import MultiSelect from './MultiSelect';
 import Loader from '../Loader';
 import BarChartContainer from './BarChartContainer';
-import { directions } from '../../utils';
+import { directions, getNonReferrerSources } from '../../utils';
 import Error from '../Error';
 
 const limitOptions = [
@@ -89,6 +89,7 @@ const LanguageComparison = () => {
   const [selectedOptions, setSelectedOptions] = useState();
   const [limit, setLimit] = useState(10);
   const [showRealNumbers, setShowRealNumbers] = useState(false);
+  const [includeOther, setIncludeOther] = useState(true);
 
   useEffect(() => setSelectedOptions([]), [language, title]);
 
@@ -137,8 +138,19 @@ const LanguageComparison = () => {
           options={otherLanguages}
         />
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h3 className="subsection-text" style={{ margin: 0 }}>Incoming Pageviews</h3>
+      <div className="sankey-controls">
+        <div>
+          <Toggle
+            className="toggle"
+            id="include-other-lang"
+            defaultChecked={includeOther}
+            icons={false}
+            onChange={() => setIncludeOther(!includeOther)}
+          />
+          <span className="toggle-label">
+            Include views from sources other than Wiki articles
+          </span>
+        </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Toggle
             className="toggle"
@@ -148,15 +160,16 @@ const LanguageComparison = () => {
             onChange={() => setShowRealNumbers(!showRealNumbers)}
           />
           <span className="toggle-label">Show real numbers</span>
-        <Select
-          className="limit-select"
-          options={limitOptions}
-          onChange={(o) => setLimit(o.value)}
-          defaultValue={limitOptions.find(({ value }) => value === limit)}
-          isSearchable={false}
-        />
+          <Select
+            className="limit-select"
+            options={limitOptions}
+            onChange={(o) => setLimit(o.value)}
+            defaultValue={limitOptions.find(({ value }) => value === limit)}
+            isSearchable={false}
+          />
         </div>
       </div>
+      <h3 className="subsection-text">Incoming Pageviews</h3>
       <div className="comparison-container">
         <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8, margin: '8px 0 4px 0' }}>
           <button
@@ -182,7 +195,7 @@ const LanguageComparison = () => {
             ref={incomingRef}
             language={language}
             direction={directions.SOURCES}
-            clickstream={sources}
+            clickstream={includeOther ? sources : getNonReferrerSources(sources)}
             selectedOptions={selectedOptions}
             limit={limit}
             showRealNumbers={showRealNumbers}
