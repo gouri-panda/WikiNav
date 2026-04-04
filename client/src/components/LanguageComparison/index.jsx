@@ -10,7 +10,7 @@ import Toggle from 'react-toggle';
 import MultiSelect from './MultiSelect';
 import Loader from '../Loader';
 import BarChartContainer from './BarChartContainer';
-import { directions, getNonReferrerSources } from '../../utils';
+import { directions, getNonReferrerSources, isReferrer } from '../../utils';
 import Error from '../Error';
 
 const limitOptions = [
@@ -68,7 +68,7 @@ const LanguageComparison = () => {
         img.src = image64;
       }
     };
-  const [{ language, title }] = useSearchState();
+  const [{ language, title }, onClick] = useSearchState();
   const {
     isLoading: isSourcesLoading,
     isError: isSourcesError,
@@ -109,6 +109,12 @@ const LanguageComparison = () => {
     ...language,
     isFixed: false,
   }));
+
+  const handleTitleClick = (clickedTitle) => {
+    if (!isReferrer(clickedTitle)) {
+      onClick('title', clickedTitle);
+    }
+  };
 
   const handleLanguageSelection = (selectedLanguage) => {
     setSelectedOptions([
@@ -199,6 +205,7 @@ const LanguageComparison = () => {
             selectedOptions={selectedOptions}
             limit={limit}
             showRealNumbers={showRealNumbers}
+            onTitleClick={handleTitleClick}
           />
         </div>
         <div className="barchart-label">{showRealNumbers ? 'Incoming Pageviews' : 'Percentage of Incoming Pageviews'}</div>
@@ -233,6 +240,7 @@ const LanguageComparison = () => {
             selectedOptions={selectedOptions}
             limit={limit}
             showRealNumbers={showRealNumbers}
+            onTitleClick={handleTitleClick}
           />
         </div>
         <div className="barchart-label">{showRealNumbers ? 'Outgoing Pageviews' : 'Percentage of Outgoing Pageviews'}</div>

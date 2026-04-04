@@ -19,6 +19,7 @@ const BarChartContainer = ({
   selectedOptions,
   limit = 10,
   showRealNumbers = false,
+  onTitleClick,
 }) => {
   const limitedClickstream = clickstream?.slice(0, limit);
   const clickstreamViews = sumClickstream(clickstream);
@@ -74,6 +75,7 @@ const BarChartContainer = ({
     <HorizontalBar
       data={chartData}
       keys={[language, ...selectedOptions?.map(({ language }) => language)]}
+      onTitleClick={onTitleClick}
     />
   );
 };

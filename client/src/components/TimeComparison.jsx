@@ -9,7 +9,7 @@ import HorizontalBar from './HorizontalBar';
 import React, { useRef, useState } from 'react';
 import Select from 'react-select';
 import Toggle from 'react-toggle';
-import { sumClickstream, round, getNonReferrerSources } from '../utils';
+import { sumClickstream, round, getNonReferrerSources, isReferrer } from '../utils';
 
 const limitOptions = [
   { value: 10, label: 'top 10' },
@@ -41,7 +41,7 @@ const TimeComparison = () => {
   const incomingRef = useRef();
   const outgoingRef = useRef();
 
-  const [{ language, title }] = useSearchState();
+  const [{ language, title }, onClick] = useSearchState();
   const {
     isLoading: isSourcesLoading,
     isError: isSourcesError,
@@ -109,6 +109,12 @@ const TimeComparison = () => {
   const chartDataIncoming = getChartData(filteredSources, filteredOldSources);
   const chartDataOutgoing = getChartData(destinations, oldDestinations);
   const keys = [month, previousMonth];
+
+  const handleTitleClick = (clickedTitle) => {
+    if (!isReferrer(clickedTitle)) {
+      onClick('title', clickedTitle);
+    }
+  };
 
   const handleDownload = (ref, type, filename) => {
     const svg = ref.current?.getSVG();
@@ -207,7 +213,7 @@ const TimeComparison = () => {
           </button>
         </div>
         <div className="barchart">
-          <HorizontalBar ref={incomingRef} data={chartDataIncoming} keys={keys} />
+          <HorizontalBar ref={incomingRef} data={chartDataIncoming} keys={keys} onTitleClick={handleTitleClick} />
         </div>
         <p className="barchart-label">{showRealNumbers ? 'Incoming Pageviews' : 'Percentage of Incoming Pageviews'}</p>
       </div>
@@ -233,7 +239,7 @@ const TimeComparison = () => {
           </button>
         </div>
         <div className="barchart">
-          <HorizontalBar ref={outgoingRef} data={chartDataOutgoing} keys={keys} />
+          <HorizontalBar ref={outgoingRef} data={chartDataOutgoing} keys={keys} onTitleClick={handleTitleClick} />
         </div>
         <p className="barchart-label">{showRealNumbers ? 'Outgoing Pageviews' : 'Percentage of Outgoing Pageviews'}</p>
       </div>

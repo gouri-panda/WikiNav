@@ -2,7 +2,7 @@
 import React, { forwardRef, useImperativeHandle, useRef } from 'react';
 import { ResponsiveBar } from '@nivo/bar';
 
-const HorizontalBar = forwardRef(({ data, keys }, ref) => {
+const HorizontalBar = forwardRef(({ data, keys, onTitleClick }, ref) => {
   const containerRef = useRef();
 
   useImperativeHandle(ref, () => ({
@@ -52,6 +52,25 @@ const HorizontalBar = forwardRef(({ data, keys }, ref) => {
             typeof v === 'string' && v.length > 12
               ? `${v.substring(0, 12)}...`
               : v,
+          renderTick: onTitleClick
+            ? ({ value, x, y, textAnchor, textBaseline, textX, textY }) => (
+                <g transform={`translate(${x},${y})`}>
+                  <line x1={0} x2={-10} y1={0} y2={0} stroke="#777" />
+                  <text
+                    textAnchor={textAnchor || 'end'}
+                    dominantBaseline={textBaseline || 'central'}
+                    x={textX ?? -15}
+                    y={textY ?? 0}
+                    style={{ fontSize: 11, fill: '#333', cursor: 'pointer' }}
+                    onClick={() => onTitleClick(value)}
+                  >
+                    {typeof value === 'string' && value.length > 12
+                      ? `${value.substring(0, 12)}...`
+                      : value}
+                  </text>
+                </g>
+              )
+            : undefined,
         }}
         enableGridX
         enableGridY={false}
