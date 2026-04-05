@@ -4,7 +4,6 @@ import { withRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { FiLink } from 'react-icons/fi';
 import { SearchStateProvider } from './searchStateContext';
-import Header from './components/Header';
 import RedirectNotice from './components/RedirectNotice';
 import Instruction from './components/Instruction';
 import LanguageComparison from './components/LanguageComparison';
@@ -15,7 +14,7 @@ import TitleSearch from './components/TitleSearch';
 import TreeMap from './components/TreeMap';
 import Overview from './components/Overview';
 import PageViews from './components/PageViews';
-import Footer from './components/Footer';
+
 import TimeComparison from './components/TimeComparison';
 import Revisions from './components/Revisions';
 import Wikipulse from './components/Wikipulse';
@@ -44,7 +43,6 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <SearchStateProvider>
       <div className="main-container">
-        <Header />
         <section className="title-text margin-top-3">WikiNav</section>
         <div className="controls-container">
           <section className="controls margin-top-3">
@@ -154,7 +152,6 @@ const App = () => (
           </Instruction>
           <SummaryTables />
         </section>
-        <Footer />
       </div>
     </SearchStateProvider>
   </QueryClientProvider>
