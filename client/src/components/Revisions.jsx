@@ -364,8 +364,17 @@ export default function WikiLanguageViz() {
     }
     useEffect(() => {
         loadRequestRef.current += 1;
-        setSelected([fixedLangOption.value]);
-        setLanguages([fixedLangOption.value]);
+        const currentLangWiki = `${language}wiki`;
+        setSelected((prev) => {
+            const base = prev.length > 0 ? prev : [fixedLangOption.value];
+            if (base.includes(currentLangWiki)) return base;
+            return [...base, currentLangWiki];
+        });
+        setLanguages((prev) => {
+            const base = prev.length > 0 ? prev : [fixedLangOption.value];
+            if (base.includes(currentLangWiki)) return base;
+            return [...base, currentLangWiki];
+        });
         setTitlesByWiki({});
         setData([]);
         setMissing([]);
@@ -641,6 +650,7 @@ export default function WikiLanguageViz() {
                             <MultiSelect
                                 fixed={fixedOption}
                                 options={langOptions}
+                                selected={selected}
                                 handleSelection={addLang}
                                 handleRemoval={(removed) =>
                                     setSelected((prev) =>

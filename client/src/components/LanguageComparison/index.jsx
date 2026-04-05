@@ -142,6 +142,7 @@ const LanguageComparison = () => {
           handleSelection={handleLanguageSelection}
           handleRemoval={handleLanguageRemoval}
           options={otherLanguages}
+          selected={selectedOptions?.map(({ language }) => language)}
         />
       </div>
       <div className="sankey-controls">

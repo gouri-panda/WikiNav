@@ -13,9 +13,11 @@ export const SearchStateProvider = ({ children }) => {
     setSearchState(searchState, 'replace');
   }, []);
 
-  const handleSearchStateChange = (name, value) => {
-    if (searchState[name] !== value) {
-      setSearchState({ [name]: value }, 'replaceIn');
+  const handleSearchStateChange = (nameOrChanges, value) => {
+    if (typeof nameOrChanges === 'object') {
+      setSearchState(nameOrChanges, 'replaceIn');
+    } else if (searchState[nameOrChanges] !== value) {
+      setSearchState({ [nameOrChanges]: value }, 'replaceIn');
     }
   };
   const value = [searchState, handleSearchStateChange];

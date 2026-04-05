@@ -20,13 +20,20 @@ const styles = {
 const orderOptions = (values) =>
   values.filter((v) => v.isFixed).concat(values.filter((v) => !v.isFixed));
 
-export default ({ fixed, options, handleSelection, handleRemoval }) => {
+export default ({ fixed, options, handleSelection, handleRemoval, selected }) => {
   const [state, setState] = useState();
   useEffect(() => {
-    setState({
-      value: orderOptions([fixed]),
-    });
-  }, [fixed]);
+    if (selected && options) {
+      const selectedOptions = options.filter((o) => selected.includes(o.value));
+      setState({
+        value: orderOptions([fixed, ...selectedOptions]),
+      });
+    } else {
+      setState({
+        value: orderOptions([fixed]),
+      });
+    }
+  }, [fixed, selected, options]);
 
   const onChange = (value, { action, option, removedValue }) => {
     // eslint-disable-next-line default-case
