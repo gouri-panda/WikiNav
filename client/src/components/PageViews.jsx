@@ -58,6 +58,7 @@ const [{ language, title }] = useSearchState();
 const [selectedRange, setSelectedRange] = useState(rangeOptions[1].value);
 const [selectedLanguage, setSelectedLanguage] = useState(language);
 const [downloadType, setDownloadType] = useState('png');
+const [showTrendline, setShowTrendline] = useState(false);
 const plotRef = React.useRef();
 
 	const defaultEndDate = toDateInputValue(getYesterday());
@@ -150,6 +151,19 @@ const plotRef = React.useRef();
 			keepPreviousData: true,
 		}
 	);
+
+	const trendlineData = useMemo(() => {
+		if (!dailyViews?.length) return null;
+		const n = dailyViews.length;
+		const ys = dailyViews.map(({ views }) => views);
+		const sumX = (n * (n - 1)) / 2;
+		const sumY = ys.reduce((a, b) => a + b, 0);
+		const sumXY = ys.reduce((acc, y, i) => acc + i * y, 0);
+		const sumX2 = (n * (n - 1) * (2 * n - 1)) / 6;
+		const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+		const intercept = (sumY - slope * sumX) / n;
+		return ys.map((_, i) => Math.max(0, Math.round(slope * i + intercept)));
+	}, [dailyViews]);
 
 	if (isLanguageTitlesLoading) {
 		return <Loader />;
@@ -269,11 +283,19 @@ const plotRef = React.useRef();
 			{!isDailyViewsLoading && dailyViews?.length ? (
 				<>
 					<div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8, margin: '8px 0 4px 0' }}>
+						<label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, userSelect: 'none', marginRight: 'auto' }}>
+							<input
+								type="checkbox"
+								checked={showTrendline}
+								onChange={() => setShowTrendline((v) => !v)}
+							/>
+							Trendline
+						</label>
 						<button
 							onClick={async () => {
-								if (!plotRef.current) return;
+								if (!plotRef.current?.el) return;
 								const format = downloadType;
-								const dataUrl = await window.Plotly.toImage(plotRef.current, { format, width: 900, height: 400, scale: 2 });
+								const dataUrl = await window.Plotly.toImage(plotRef.current.el, { format, width: 900, height: 400, scale: 2 });
 								const a = document.createElement('a');
 								a.href = dataUrl;
 								a.download = `pageviews.${format}`;
@@ -308,6 +330,19 @@ const plotRef = React.useRef();
 									},
 									hovertemplate: '<b>%{x}</b><br>%{y} views<extra></extra>',
 								},
+								...(showTrendline && trendlineData
+									? [
+											{
+												type: 'scatter',
+												mode: 'lines',
+												x: dayLabels,
+												y: trendlineData,
+												name: 'Trendline',
+												line: { color: '#e31a1c', width: 2, dash: 'dash' },
+												hovertemplate: '<b>%{x}</b><br>Trend: %{y} views<extra></extra>',
+											},
+									  ]
+									: []),
 							]}
 							layout={{
 								autosize: true,
@@ -333,7 +368,7 @@ const plotRef = React.useRef();
 								paper_bgcolor: 'rgba(0,0,0,0)',
 								plot_bgcolor: '#f2f9fe',
 								bargap: 0.15,
-								showlegend: false,
+								showlegend: showTrendline,
 							}}
 							config={{
 								displaylogo: false,
