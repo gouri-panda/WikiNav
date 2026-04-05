@@ -7,7 +7,11 @@ import { normalize } from '../utils';
 const LanguageSearch = ({ name }) => {
   const [{ language, title }, onChange] = useSearchState();
   const { data: metadata } = useClickstreamMetadata();
-  const { languages: options } = metadata ?? {};
+  const { languages } = metadata ?? {};
+  const options = languages && [
+    ...languages.filter(({ value }) => value === language),
+    ...languages.filter(({ value }) => value !== language),
+  ];
 
   const handleLanguageChange = async (newLanguage) => {
     try {

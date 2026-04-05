@@ -25,10 +25,12 @@ export const fetchLatestMetadata = async () => {
   const response = await axios.get(url);
   const result = {
     month: response?.data.month,
-    languages: response?.data.languages?.map((language) => ({
-      value: language,
-      label: `${language}.wikipedia.org`,
-    })),
+    languages: response?.data.languages
+      ?.map((language) => ({
+        value: language,
+        label: `${language}.wikipedia.org`,
+      }))
+      .sort((a, b) => a.value.localeCompare(b.value)),
   };
   return result;
 };
