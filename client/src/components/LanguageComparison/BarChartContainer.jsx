@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 import useMultipleClickstream from '../../hooks/useMultipleClickstream';
 import useTitlesInLanguages from '../../hooks/useTitlesInLanguages';
 import HorizontalBar from '../HorizontalBar';
@@ -12,7 +12,7 @@ const isLoading = (results) => results.some(({ isLoading }) => isLoading);
 const percentageOfViews = (views, totalViews) =>
   round((views * 100) / totalViews);
 
-const BarChartContainer = ({
+const BarChartContainer = forwardRef(({
   language,
   direction,
   clickstream,
@@ -20,7 +20,7 @@ const BarChartContainer = ({
   limit = 10,
   showRealNumbers = false,
   onTitleClick,
-}) => {
+}, ref) => {
   const limitedClickstream = clickstream?.slice(0, limit);
   const clickstreamViews = sumClickstream(clickstream);
 
@@ -73,11 +73,12 @@ const BarChartContainer = ({
 
   return (
     <HorizontalBar
+      ref={ref}
       data={chartData}
       keys={[language, ...selectedOptions?.map(({ language }) => language)]}
       onTitleClick={onTitleClick}
     />
   );
-};
+});
 
 export default BarChartContainer;
