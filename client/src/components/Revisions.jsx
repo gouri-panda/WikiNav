@@ -205,14 +205,13 @@ export default function WikiLanguageViz() {
 
             const code = lang.replace("wiki", "");
             const localizedTitle = titlesByWiki[lang] || article;
-            const encodedTitle = encodeURIComponent(localizedTitle);
             const { startISO, endISO } = periodWindow;
 
             const fetchBoundarySize = async (boundaryISO) => {
                 const params = new URLSearchParams({
                     action: "query",
                     prop: "revisions",
-                    titles: encodedTitle,
+                    titles: localizedTitle,
                     rvprop: "size",
                     rvlimit: "1",
                     rvstart: boundaryISO,
@@ -236,7 +235,7 @@ export default function WikiLanguageViz() {
                 const params = new URLSearchParams({
                     action: "query",
                     prop: "revisions",
-                    titles: encodedTitle,
+                    titles: localizedTitle,
                     rvprop: "size|tags|timestamp",
                     rvlimit: "max",
                     rvstart: endISO,
