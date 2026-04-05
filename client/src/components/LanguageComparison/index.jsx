@@ -111,8 +111,9 @@ const LanguageComparison = () => {
   }));
 
   const handleTitleClick = (clickedTitle) => {
-    if (!isReferrer(clickedTitle)) {
-      onClick('title', clickedTitle);
+    const normalized = clickedTitle.replaceAll(' ', '_');
+    if (!isReferrer(normalized)) {
+      onClick('title', normalized);
     }
   };
 

@@ -9,7 +9,7 @@ import HorizontalBar from './HorizontalBar';
 import React, { useRef, useState } from 'react';
 import Select from 'react-select';
 import Toggle from 'react-toggle';
-import { sumClickstream, round, getNonReferrerSources, isReferrer } from '../utils';
+import { sumClickstream, round, getNonReferrerSources, isReferrer, denormalize, normalize } from '../utils';
 
 const limitOptions = [
   { value: 10, label: 'top 10' },
@@ -91,13 +91,13 @@ const TimeComparison = () => {
       const oldViews = oldClickstream.find((c) => c.title === title)?.views;
       if (showRealNumbers) {
         return {
-          title,
+          title: denormalize(title),
           [month]: views ?? 0,
           [previousMonth]: oldViews ?? 0,
         };
       }
       return {
-        title,
+        title: denormalize(title),
         [month]: percentageOfViews(views, currentClickstreamViews),
         [previousMonth]: percentageOfViews(oldViews, oldClickstreamViews),
       };
@@ -111,8 +111,9 @@ const TimeComparison = () => {
   const keys = [month, previousMonth];
 
   const handleTitleClick = (clickedTitle) => {
-    if (!isReferrer(clickedTitle)) {
-      onClick('title', clickedTitle);
+    const normalized = normalize(clickedTitle);
+    if (!isReferrer(normalized)) {
+      onClick('title', normalized);
     }
   };
 

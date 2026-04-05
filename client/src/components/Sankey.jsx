@@ -13,6 +13,8 @@ import {
   getSourcePercentages,
   getDestinationPercentages,
   isReferrer,
+  denormalize,
+  normalize,
 } from '../utils';
 import { useSearchState } from '../searchStateContext';
 import Loader from './Loader';
@@ -37,7 +39,7 @@ const getDestinationIds = (sourceCount, destinationCount) =>
     );
 
 const getLabels = (title, sources, destinations) =>
-  [...getTitles(sources), title].concat(getTitles(destinations));
+  [...getTitles(sources), title].concat(getTitles(destinations)).map(denormalize);
 
 const getValues = (sources, destinations) =>
   getViews(sources).concat(getViews(destinations));
@@ -189,8 +191,9 @@ const Sankey = ({ name }) => {
           ],
         }}
         onClick={({ points }) => {
-          if (!isReferrer(points[0].label)) {
-            onClick(name, points[0].label);
+          const label = normalize(points[0].label);
+          if (!isReferrer(label)) {
+            onClick(name, label);
           }
         }}
         useResizeHandler

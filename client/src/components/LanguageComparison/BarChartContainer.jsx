@@ -3,7 +3,7 @@ import useMultipleClickstream from '../../hooks/useMultipleClickstream';
 import useTitlesInLanguages from '../../hooks/useTitlesInLanguages';
 import HorizontalBar from '../HorizontalBar';
 import Loader from '../Loader';
-import { getTitles, round, sumClickstream } from '../../utils';
+import { getTitles, round, sumClickstream, denormalize } from '../../utils';
 
 const isError = (results) => results.some(({ isError }) => isError);
 
@@ -43,7 +43,7 @@ const BarChartContainer = forwardRef(({
   );
   const chartData = limitedClickstream.map(({ title, views }) => {
     const dataPoint = {
-      title,
+      title: denormalize(title),
       [language]: showRealNumbers ? (views ?? 0) : percentageOfViews(views, clickstreamViews),
     };
     selectedOptions?.forEach(({ language }, idx) => {
