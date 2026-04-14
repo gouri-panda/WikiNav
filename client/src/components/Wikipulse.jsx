@@ -7,6 +7,7 @@ import { useSearchState } from '../searchStateContext';
 import { denormalize, kFormatter } from '../utils';
 import Loader from './Loader';
 import Error from './Error';
+import CameraDownloadButton from './CameraDownloadButton';
 import * as d3 from 'd3';
 
 const baseURL = 'https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article';
@@ -75,7 +76,9 @@ const fetchWeeklyData = async (language, title) => {
 	const url = `${baseURL}/${language}.wikipedia/all-access/user/${encodedTitle}/daily/${start}/${end}`;
 	try {
 		const response = await axios.get(url);
-		const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+		// Order starting from Monday: JS getDay() 0=Sun,1=Mon,...,6=Sat
+		const dayNames = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+		const jsOrder =  [1, 2, 3, 4, 5, 6, 0]; // maps dayNames index to JS getDay()
 		const weeklyAgg = Array(7).fill(0);
 		const weeklyCount = Array(7).fill(0);
 		(response.data.items ?? []).forEach(({ timestamp, views }) => {
@@ -85,11 +88,14 @@ const fetchWeeklyData = async (language, title) => {
 			weeklyCount[dayOfWeek] += 1;
 		});
 
-		return dayNames.map((day, idx) => ({
-			day,
-			dayNum: idx,
-			avgViews: weeklyCount[idx] > 0 ? Math.round(weeklyAgg[idx] / weeklyCount[idx]) : 0,
-		}));
+		return dayNames.map((day, idx) => {
+			const jsIdx = jsOrder[idx];
+			return {
+				day,
+				dayNum: idx,
+				avgViews: weeklyCount[jsIdx] > 0 ? Math.round(weeklyAgg[jsIdx] / weeklyCount[jsIdx]) : 0,
+			};
+		});
 	} catch {
 		return [];
 	}
@@ -191,23 +197,6 @@ const SpiralChart = React.forwardRef(function SpiralChart({ data }, ref) {
 	const svgRef = useRef(null);
 
 	React.useImperativeHandle(ref, () => ({
-		downloadSVG: () => {
-			if (!svgRef.current) return;
-			const serializer = new XMLSerializer();
-			let source = serializer.serializeToString(svgRef.current);
-			if (!source.match(/^<svg/)) {
-				source = '<svg ' + source.substring(source.indexOf('<svg ') + 5);
-			}
-			const svgBlob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
-			const url = URL.createObjectURL(svgBlob);
-			const a = document.createElement('a');
-			a.href = url;
-			a.download = 'wikipulse-spiral.svg';
-			document.body.appendChild(a);
-			a.click();
-			document.body.removeChild(a);
-			URL.revokeObjectURL(url);
-		},
 		downloadPNG: () => {
 			if (!svgRef.current) return;
 			const serializer = new XMLSerializer();
@@ -232,7 +221,7 @@ const SpiralChart = React.forwardRef(function SpiralChart({ data }, ref) {
 					const url = URL.createObjectURL(blob);
 					const a = document.createElement('a');
 					a.href = url;
-					a.download = 'wikipulse-spiral.png';
+					a.download = 'wikipulse.png';
 					document.body.appendChild(a);
 					a.click();
 					document.body.removeChild(a);
@@ -471,7 +460,7 @@ export default function WikiPulse() {
 	const isLoading = yearlyLoading || weeklyLoading || monthlyLoading || statsLoading || summaryLoading;
 
 	const spiralRef = React.useRef();
-	const [downloadType, setDownloadType] = React.useState('png');
+	const weeklyRef = React.useRef();
 
 	if (isLoading) {
 		return <Loader />;
@@ -543,11 +532,38 @@ export default function WikiPulse() {
 	const readableTitle = denormalize(article);
 
 	const handleDownload = () => {
-		if (downloadType === 'svg') {
-			spiralRef.current?.downloadSVG();
-		} else {
-			spiralRef.current?.downloadPNG();
-		}
+		spiralRef.current?.downloadPNG();
+	};
+
+	const handleWeeklyDownload = () => {
+		const el = weeklyRef.current;
+		if (!el) return;
+		const rect = el.getBoundingClientRect();
+		const w = Math.ceil(rect.width);
+		const h = Math.ceil(rect.height);
+		const xmlns = 'http://www.w3.org/1999/xhtml';
+		const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><foreignObject width="100%" height="100%"><div xmlns="${xmlns}">${el.outerHTML}</div></foreignObject></svg>`;
+		const svg64 = btoa(unescape(encodeURIComponent(svg)));
+		const img = new window.Image();
+		img.onload = function () {
+			const canvas = document.createElement('canvas');
+			canvas.width = w * 2;
+			canvas.height = h * 2;
+			const ctx = canvas.getContext('2d');
+			ctx.scale(2, 2);
+			ctx.fillStyle = '#fff';
+			ctx.fillRect(0, 0, w, h);
+			ctx.drawImage(img, 0, 0, w, h);
+			canvas.toBlob(function (blob) {
+				const url = URL.createObjectURL(blob);
+				const a = document.createElement('a');
+				a.href = url;
+				a.download = 'weekly_pulse.png';
+				a.click();
+				URL.revokeObjectURL(url);
+			}, 'image/png');
+		};
+		img.src = 'data:image/svg+xml;base64,' + svg64;
 	};
 
 	return (
@@ -588,9 +604,10 @@ export default function WikiPulse() {
 					</div>
 
 					{/* WEEKLY PULSE */}
-					<div className="wikipulse-chart-section">
+					<div className="wikipulse-chart-section chart-download-wrapper">
+						<CameraDownloadButton onClick={handleWeeklyDownload} />
 						<h3 className="wikipulse-section-title">Weekly pulse</h3>
-						<div className="wikipulse-weekly-labels">
+						<div className="wikipulse-weekly-labels" ref={weeklyRef}>
 							{weeklyData.length > 0 && (() => {
 								const overallAvg = weeklyData.reduce((s, d) => s + d.avgViews, 0) / weeklyData.length;
 								return weeklyData.map(d => (
@@ -608,20 +625,10 @@ export default function WikiPulse() {
 
 				<div className="wikipulse-right">
 					<h3 className="wikipulse-right-title">Yearly seasonality</h3>
-					<div className="wikipulse-toolbar" style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', margin: '8px 0 12px 0', gap: 8 }}>
-						<button onClick={handleDownload} className="sankey-download-button" title={`Download Spiral as ${downloadType.toUpperCase()}`}>Download</button>
-						<button
-							type="button"
-							className="sankey-download-button"
-							style={{ marginLeft: 8, minWidth: 80, fontSize: 14, fontWeight: 600, padding: '10px 18px' }}
-							aria-pressed={downloadType === 'svg'}
-							onClick={() => setDownloadType(downloadType === 'png' ? 'svg' : 'png')}
-							title={downloadType === 'png' ? 'Switch to SVG' : 'Switch to PNG'}
-						>
-							{downloadType === 'png' ? 'PNG' : 'SVG'}
-						</button>
+					<div className="chart-download-wrapper">
+						<CameraDownloadButton onClick={handleDownload} />
+						<SpiralChart ref={spiralRef} data={yearlyData} />
 					</div>
-					<SpiralChart ref={spiralRef} data={yearlyData} />
 				</div>
 			</div>
 		</div>

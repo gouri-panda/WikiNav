@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 // eslint-disable-next-line import/no-extraneous-dependencies
 import * as d3 from "d3";
 import MultiSelect from "./LanguageComparison/MultiSelect";
+import CameraDownloadButton from './CameraDownloadButton';
 import { useSearchState } from "../searchStateContext";
 import Loader from "./Loader";
 
@@ -572,49 +573,34 @@ export default function WikiLanguageViz() {
         });
     }
 
-    const [downloadType, setDownloadType] = useState('png');
-
     function download() {
         const svg = svgRef.current;
         if (!svg) return;
-        if (downloadType === 'svg') {
-            const serializer = new XMLSerializer();
-            const src = serializer.serializeToString(svg);
-            const blob = new Blob([src], { type: "image/svg+xml" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = "wikilangviz.svg";
-            a.click();
-            URL.revokeObjectURL(url);
-        } else {
-            // PNG export
-            const serializer = new XMLSerializer();
-            const src = serializer.serializeToString(svg);
-            const svg64 = btoa(unescape(encodeURIComponent(src)));
-            const image64 = 'data:image/svg+xml;base64,' + svg64;
-            const img = new window.Image();
-            const width = svg.width.baseVal.value || 1000;
-            const height = svg.height.baseVal.value || 700;
-            img.onload = function () {
-                const canvas = document.createElement('canvas');
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                ctx.fillStyle = '#fff';
-                ctx.fillRect(0, 0, width, height);
-                ctx.drawImage(img, 0, 0, width, height);
-                canvas.toBlob(function (blob) {
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'wikilangviz.png';
-                    a.click();
-                    URL.revokeObjectURL(url);
-                }, 'image/png');
-            };
-            img.src = image64;
-        }
+        const serializer = new XMLSerializer();
+        const src = serializer.serializeToString(svg);
+        const svg64 = btoa(unescape(encodeURIComponent(src)));
+        const image64 = 'data:image/svg+xml;base64,' + svg64;
+        const img = new window.Image();
+        const width = svg.width.baseVal.value || 1000;
+        const height = svg.height.baseVal.value || 700;
+        img.onload = function () {
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, width, height);
+            ctx.drawImage(img, 0, 0, width, height);
+            canvas.toBlob(function (blob) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'revisions_and_reverts.png';
+                a.click();
+                URL.revokeObjectURL(url);
+            }, 'image/png');
+        };
+        img.src = image64;
     }
     const currentArticleLabel = titlesByWiki[fixedLangOption.value] || article;
     const fixedOption = useMemo(() => ({
@@ -694,27 +680,6 @@ export default function WikiLanguageViz() {
                             </div>
                         )}
                     </div>
-
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8 }}>
-                        <button
-                            type="button"
-                            onClick={download}
-                            className="sankey-download-button"
-                            title={`Download as ${downloadType.toUpperCase()}`}
-                        >
-                            Download
-                        </button>
-                        <button
-                            type="button"
-                            className="sankey-download-button"
-                            style={{ minWidth: 80, fontSize: 14, fontWeight: 600, padding: '10px 18px' }}
-                            aria-pressed={downloadType === 'svg'}
-                            onClick={() => setDownloadType(downloadType === 'png' ? 'svg' : 'png')}
-                            title={downloadType === 'png' ? 'Switch to SVG' : 'Switch to PNG'}
-                        >
-                            {downloadType === 'png' ? 'PNG' : 'SVG'}
-                        </button>
-                    </div>
                 </div>
             </div>
 
@@ -743,7 +708,8 @@ export default function WikiLanguageViz() {
                 </div>
 
             }
-            <div className="revisions-chart">
+            <div className="revisions-chart chart-download-wrapper">
+                <CameraDownloadButton onClick={download} />
                 <svg
                     ref={svgRef}
                     className="revisions-svg"

@@ -57,7 +57,6 @@ const PageViews = () => {
 const [{ language, title }] = useSearchState();
 const [selectedRange, setSelectedRange] = useState(rangeOptions[1].value);
 const [selectedLanguage, setSelectedLanguage] = useState(language);
-const [downloadType, setDownloadType] = useState('png');
 const [showTrendline, setShowTrendline] = useState(false);
 const plotRef = React.useRef();
 
@@ -291,31 +290,6 @@ const plotRef = React.useRef();
 							/>
 							Trendline
 						</label>
-						<button
-							onClick={async () => {
-								if (!plotRef.current?.el) return;
-								const format = downloadType;
-								const dataUrl = await window.Plotly.toImage(plotRef.current.el, { format, width: 900, height: 400, scale: 2 });
-								const a = document.createElement('a');
-								a.href = dataUrl;
-								a.download = `pageviews.${format}`;
-								a.click();
-							}}
-							className="sankey-download-button"
-							title={`Download as ${downloadType.toUpperCase()}`}
-						>
-							Download
-						</button>
-						<button
-							type="button"
-							className="sankey-download-button"
-							style={{ minWidth: 80, fontSize: 14, fontWeight: 600, padding: '10px 18px' }}
-							aria-pressed={downloadType === 'svg'}
-							onClick={() => setDownloadType(downloadType === 'png' ? 'svg' : 'png')}
-							title={downloadType === 'png' ? 'Switch to SVG' : 'Switch to PNG'}
-						>
-							{downloadType === 'png' ? 'PNG' : 'SVG'}
-						</button>
 					</div>
 					<div className="pageviews-chart">
 						<Plot

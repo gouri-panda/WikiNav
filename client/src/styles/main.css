@@ -266,6 +266,36 @@ a {
   outline: 2px solid rgba(6, 112, 222, 0.3);
   outline-offset: 2px;
 }
+.chart-download-wrapper {
+  position: relative;
+}
+.chart-download-icon {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 10;
+  opacity: 0;
+  pointer-events: none;
+  appearance: none;
+  border: none;
+  background: rgba(255, 255, 255, 0.85);
+  color: #555;
+  border-radius: 6px;
+  padding: 4px;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+  transition: opacity 150ms ease, color 150ms ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.chart-download-wrapper:hover .chart-download-icon {
+  opacity: 1;
+  pointer-events: auto;
+}
+.chart-download-icon:hover {
+  color: #0670de;
+}
 .pageviews-container {
   margin-top: var(--spacing1);
 }
