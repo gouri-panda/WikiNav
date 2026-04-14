@@ -2,6 +2,22 @@
 import React, { forwardRef, useImperativeHandle, useRef } from 'react';
 import { ResponsiveBar } from '@nivo/bar';
 
+const BarTooltip = ({ id, value, indexValue, color, data }) => {
+  const translatedTitle = data?.translations?.[id];
+  return (
+    <div style={{ padding: '6px 10px', background: 'white', border: '1px solid #ccc', borderRadius: 4, fontSize: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+        <span style={{ width: 12, height: 12, background: color, borderRadius: 2, display: 'inline-block' }} />
+        <strong>{id}.wikipedia</strong>
+      </div>
+      {translatedTitle && (
+        <div style={{ marginBottom: 2 }}>Article: <strong>{translatedTitle}</strong></div>
+      )}
+      <div>Value: <strong>{typeof value === 'number' && !isNaN(value) ? value : 0}</strong></div>
+    </div>
+  );
+};
+
 const HorizontalBar = forwardRef(({ data, keys, onTitleClick }, ref) => {
   const containerRef = useRef();
 
@@ -17,6 +33,7 @@ const HorizontalBar = forwardRef(({ data, keys, onTitleClick }, ref) => {
         data={data.sort((a, b) => a[keys[0]] - b[keys[0]])}
         keys={keys}
         indexBy="title"
+        tooltip={BarTooltip}
         margin={{
           top: 38,
           right: 28,

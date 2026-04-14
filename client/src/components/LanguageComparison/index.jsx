@@ -10,7 +10,7 @@ import Toggle from 'react-toggle';
 import MultiSelect from './MultiSelect';
 import Loader from '../Loader';
 import BarChartContainer from './BarChartContainer';
-import { directions, getNonReferrerSources, isReferrer } from '../../utils';
+import { directions, getNonReferrerSources, isReferrer, denormalize } from '../../utils';
 import Error from '../Error';
 
 const limitOptions = [
@@ -102,13 +102,18 @@ const LanguageComparison = () => {
   }
 
   const titleInLanguage = titleInLanguages && new Map(titleInLanguages);
-  const fixedLanguage = languages.find(({ value }) => value === language);
-  fixedLanguage.isFixed = true;
-  let otherLanguages = languages.filter(({ value }) => value !== language);
-  otherLanguages = otherLanguages.map((language) => ({
-    ...language,
-    isFixed: false,
-  }));
+  const fixedLanguage = {
+    ...languages.find(({ value }) => value === language),
+    label: `${language}.wikipedia.org – ${denormalize(title)}`,
+    isFixed: true,
+  };
+  let otherLanguages = languages
+    .filter(({ value }) => value !== language && titleInLanguage?.has(value))
+    .map((lang) => ({
+      ...lang,
+      label: `${lang.label} – ${denormalize(titleInLanguage.get(lang.value))}`,
+      isFixed: false,
+    }));
 
   const handleTitleClick = (clickedTitle) => {
     const normalized = clickedTitle.replaceAll(' ', '_');
@@ -145,6 +150,11 @@ const LanguageComparison = () => {
           options={otherLanguages}
           selected={selectedOptions?.map(({ language }) => language)}
         />
+        {otherLanguages.length === 0 && (
+          <p className="paragraph" style={{ marginTop: 8, color: '#888' }}>
+            No other language editions with clickstream data are available for this article.
+          </p>
+        )}
       </div>
       <div className="sankey-controls">
         <div>

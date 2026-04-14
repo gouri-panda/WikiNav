@@ -42,6 +42,7 @@ const BarChartContainer = forwardRef(({
     sumClickstream(data)
   );
   const chartData = limitedClickstream.map(({ title, views }) => {
+    const translations = { [language]: denormalize(title) };
     const dataPoint = {
       title: denormalize(title),
       [language]: showRealNumbers ? (views ?? 0) : percentageOfViews(views, clickstreamViews),
@@ -50,6 +51,7 @@ const BarChartContainer = forwardRef(({
       const titleInLanguage = selectedLanguageTitles[idx].data?.find(
         (s) => s.title === title
       )?.langlink;
+      translations[language] = denormalize(titleInLanguage ?? title);
       const titleViews = selectedLanguageClickstream[idx].data?.find(
         (s) => s.title === (titleInLanguage ?? title)
       )?.views;
@@ -57,6 +59,7 @@ const BarChartContainer = forwardRef(({
         ? (titleViews ?? 0)
         : percentageOfViews(titleViews, selectedLanguageViews[idx]);
     });
+    dataPoint.translations = translations;
     return dataPoint;
   });
 
