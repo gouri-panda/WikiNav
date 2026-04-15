@@ -43,7 +43,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <SearchStateProvider>
       <div className="main-container">
-        <section className="title-text margin-top-3">Article overview</section>
+        <section className="title-text margin-top-3">Article Overview</section>
         <div className="controls-container">
           <section className="controls margin-top-3">
             <LanguageSearch name="language" />
