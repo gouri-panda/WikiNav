@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useRef, useCallback } from 'react';
 import { FiArrowDownLeft, FiArrowUpRight } from 'react-icons/fi';
+import html2canvas from 'html2canvas';
 import {
   sumClickstream,
   denormalize,
@@ -13,6 +14,7 @@ import useClickstreamMetadata from '../hooks/useClickstreamMetadata';
 import { useSearchState } from '../searchStateContext';
 import Loader from './Loader';
 import Error from './Error';
+import CameraDownloadButton from './CameraDownloadButton';
 
 const OverviewCard = ({ incoming, figure, text, footnote }) => (
   <div className="overview-card">
@@ -26,6 +28,17 @@ const OverviewCard = ({ incoming, figure, text, footnote }) => (
 
 const Overview = () => {
   const [{ language, title }] = useSearchState();
+  const overviewRef = useRef();
+
+  const handleDownload = useCallback(() => {
+    if (!overviewRef.current) return;
+    html2canvas(overviewRef.current, { useCORS: true }).then((canvas) => {
+      const link = document.createElement('a');
+      link.download = `${title || 'overview'}_overview.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    });
+  }, [title]);
   const {
     isLoading: isSourcesLoading,
     isError: isSourcesError,
@@ -79,7 +92,9 @@ const Overview = () => {
         . The dataset contains the number of times a given link from a
         source-page to a target-page in Wikipedia was clicked in that month.
       </p>
-      <div className="overview-container">
+      <div className="chart-download-wrapper" ref={overviewRef}>
+        <CameraDownloadButton onClick={handleDownload} />
+        <div className="overview-container">
         <OverviewCard
           incoming
           figure={incomingPageviews}
@@ -97,6 +112,7 @@ const Overview = () => {
           figure={uniqueDestinations}
           text="unique destinations"
         />
+      </div>
       </div>
       <div className="footnote-content margin-top-3">
         The actual number of incoming pageviews received by {denormalize(title)}{' '}
