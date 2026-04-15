@@ -285,7 +285,7 @@ const SpiralChart = React.forwardRef(function SpiralChart({ data }, ref) {
 		const size = Math.ceil(chartRadius * 2);
 		const width = size;
 		const legendHeight = 90;
-		const topCrop = 110;
+		const topCrop = 0;
 		const height = size + legendHeight - topCrop;
 		const angularGap = 0;
 
