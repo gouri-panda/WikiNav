@@ -101,6 +101,33 @@ a {
   margin-bottom: 0;
   text-align: center;
 }
+
+.pdf-download-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  font-size: var(--font-size-small);
+  font-family: var(--font-family-sans-serif);
+  font-weight: 500;
+  color: var(--color-blue1);
+  background: var(--color-blue0);
+  border: 1px solid var(--color-blue1);
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+
+.pdf-download-button:hover {
+  background: var(--color-blue1);
+  color: #fff;
+}
+
+.pdf-download-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 .section-text {
   font-size: var(--font-size-section);
   font-weight: 700;
@@ -140,11 +167,12 @@ a {
 }
 .controls {
   display: grid;
-  grid-template-columns: 30% auto;
+  grid-template-columns: 30% 1fr min-content;
   gap: 10px;
   padding: var(--spacing1);
   box-shadow: 0 0 0 1px var(--color-shadow0);
   border-radius: 2px;
+  align-items: center;
 }
 .content > :first-child {
   margin-top: var(--spacing3);

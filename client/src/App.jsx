@@ -18,6 +18,7 @@ import PageViews from './components/PageViews';
 import TimeComparison from './components/TimeComparison';
 import Revisions from './components/Revisions';
 import Wikipulse from './components/Wikipulse';
+import PdfDownloadButton from './components/PdfDownloadButton';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -48,6 +49,7 @@ const App = () => (
           <section className="controls margin-top-3">
             <LanguageSearch name="language" />
             <TitleSearch name="title" />
+            <PdfDownloadButton />
           </section>
         </div>
         <section className="content">

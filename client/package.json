@@ -13,6 +13,7 @@
     "d3-array": "^3.2.4",
     "d3-scale": "^4.0.2",
     "html2canvas": "^1.4.1",
+    "html2pdf.js": "^0.14.0",
     "plotly.js": "^3.4.0",
     "qs": "^6.10.1",
     "query-string": "^7.0.1",
