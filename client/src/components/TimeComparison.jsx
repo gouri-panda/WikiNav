@@ -10,7 +10,9 @@ import React, { useRef, useState } from 'react';
 import Select from 'react-select';
 import CameraDownloadButton from './CameraDownloadButton';
 import Toggle from 'react-toggle';
-import { sumClickstream, round, getNonReferrerSources, isReferrer, denormalize, normalize } from '../utils';
+import { sumClickstream, round, getNonReferrerSources, getTitles, isReferrer, denormalize, normalize } from '../utils';
+import useMonthlyViews from '../hooks/useMonthlyViews';
+import useMultipleMonthlyViews from '../hooks/useMultipleMonthlyViews';
 
 const limitOptions = [
   { value: 10, label: 'top 10' },
@@ -52,8 +54,10 @@ const TimeComparison = () => {
     data: destinations,
   } = useDestinations(language, title);
   const { data: metadata } = useClickstreamMetadata();
-  const month = metadata?.month;
-  const previousMonth = month && getPreviousMonth(month);
+  const currentMonth = metadata?.month;
+  const previousMonth = currentMonth && getPreviousMonth(currentMonth);
+  const [currentYear, currentMonthNum] = currentMonth?.split('-') ?? [];
+  const [prevYear, prevMonthNum] = previousMonth?.split('-') ?? [];
   const {
     isLoading: isOldSourcesLoading,
     isError: isOldSourcesError,
@@ -64,12 +68,43 @@ const TimeComparison = () => {
     isError: isOldDestinationsError,
     data: oldDestinations,
   } = useDestinations(language, title, previousMonth);
+  const {
+    isLoading: isCurrentMonthlyViewsLoading,
+    isError: isCurrentMonthlyViewsError,
+    data: currentTitleMonthlyViews,
+  } = useMonthlyViews(language, title, currentMonthNum, currentYear);
+  const {
+    isLoading: isPrevMonthlyViewsLoading,
+    isError: isPrevMonthlyViewsError,
+    data: prevTitleMonthlyViews,
+  } = useMonthlyViews(language, title, prevMonthNum, prevYear);
+  const currentDestMonthlyViews = useMultipleMonthlyViews(
+    language,
+    getTitles(destinations?.slice(0, 20)),
+    currentMonthNum,
+    currentYear
+  );
+  const prevDestMonthlyViews = useMultipleMonthlyViews(
+    language,
+    getTitles(destinations?.slice(0, 20)),
+    prevMonthNum,
+    prevYear
+  );
+  const isDestMonthlyViewsLoading =
+    currentDestMonthlyViews.some(({ isLoading }) => isLoading) ||
+    prevDestMonthlyViews.some(({ isLoading }) => isLoading);
+  const isDestMonthlyViewsError =
+    currentDestMonthlyViews.some(({ isError }) => isError) ||
+    prevDestMonthlyViews.some(({ isError }) => isError);
 
   if (
     isSourcesLoading ||
     isDestinationsLoading ||
     isOldSourcesLoading ||
-    isOldDestinationsLoading
+    isOldDestinationsLoading ||
+    isCurrentMonthlyViewsLoading ||
+    isPrevMonthlyViewsLoading ||
+    isDestMonthlyViewsLoading
   ) {
     return <Loader />;
   }
@@ -78,36 +113,57 @@ const TimeComparison = () => {
     isSourcesError ||
     isDestinationsError ||
     isOldSourcesError ||
-    isOldDestinationsError
+    isOldDestinationsError ||
+    isCurrentMonthlyViewsError ||
+    isPrevMonthlyViewsError ||
+    isDestMonthlyViewsError
   ) {
     return <Error />;
   }
 
-  const getChartData = (currentClickstream, oldClickstream) => {
-    const currentClickstreamViews = sumClickstream(currentClickstream);
-    const oldClickstreamViews = sumClickstream(oldClickstream);
+  const getIncomingChartData = (currentClickstream, oldClickstream) => {
     return currentClickstream.slice(0, limit).map(({ title, views }) => {
       const oldViews = oldClickstream.find((c) => c.title === title)?.views;
       if (showRealNumbers) {
         return {
           title: denormalize(title),
-          [month]: views ?? 0,
+          [currentMonth]: views ?? 0,
           [previousMonth]: oldViews ?? 0,
         };
       }
       return {
         title: denormalize(title),
-        [month]: percentageOfViews(views, currentClickstreamViews),
-        [previousMonth]: percentageOfViews(oldViews, oldClickstreamViews),
+        [currentMonth]: percentageOfViews(views, currentTitleMonthlyViews),
+        [previousMonth]: percentageOfViews(oldViews, prevTitleMonthlyViews),
+      };
+    });
+  };
+
+  const getOutgoingChartData = (currentClickstream, oldClickstream) => {
+    return currentClickstream.slice(0, limit).map(({ title, views }, idx) => {
+      const oldViews = oldClickstream.find((c) => c.title === title)?.views;
+      const currentDestViews = currentDestMonthlyViews[idx]?.data;
+      const prevDestViews = prevDestMonthlyViews[idx]?.data;
+      if (showRealNumbers) {
+        return {
+          title: denormalize(title),
+          [currentMonth]: views ?? 0,
+          [previousMonth]: oldViews ?? 0,
+        };
+      }
+      return {
+        title: denormalize(title),
+        [currentMonth]: percentageOfViews(views, currentDestViews),
+        [previousMonth]: percentageOfViews(oldViews, prevDestViews),
       };
     });
   };
 
   const filteredSources = includeOther ? sources : getNonReferrerSources(sources);
   const filteredOldSources = includeOther ? oldSources : getNonReferrerSources(oldSources);
-  const chartDataIncoming = getChartData(filteredSources, filteredOldSources);
-  const chartDataOutgoing = getChartData(destinations, oldDestinations);
-  const keys = [month, previousMonth];
+  const chartDataIncoming = getIncomingChartData(filteredSources, filteredOldSources);
+  const chartDataOutgoing = getOutgoingChartData(destinations, oldDestinations);
+  const keys = [currentMonth, previousMonth];
 
   const handleTitleClick = (clickedTitle) => {
     const normalized = normalize(clickedTitle);

@@ -5,13 +5,15 @@ import useSources from '../../hooks/useSources';
 import useDestinations from '../../hooks/useDestinations';
 import useTitleinLanguages from '../../hooks/useTitleInLanguages';
 import useClickstreamMetadata from '../../hooks/useClickstreamMetadata';
+import useMonthlyViews from '../../hooks/useMonthlyViews';
+import useMultipleMonthlyViews from '../../hooks/useMultipleMonthlyViews';
 import Select from 'react-select';
 import Toggle from 'react-toggle';
 import MultiSelect from './MultiSelect';
 import Loader from '../Loader';
 import BarChartContainer from './BarChartContainer';
 import CameraDownloadButton from '../CameraDownloadButton';
-import { directions, getNonReferrerSources, isReferrer, denormalize } from '../../utils';
+import { directions, getNonReferrerSources, getTitles, isReferrer, denormalize } from '../../utils';
 import Error from '../Error';
 
 const limitOptions = [
@@ -67,12 +69,26 @@ const LanguageComparison = () => {
     data: destinations,
   } = useDestinations(language, title);
   const { data: metadata } = useClickstreamMetadata();
+  const [year, month] = metadata?.month.split('-') ?? [];
   const { languages } = metadata ?? {};
   const {
     isLoading: isTitleInLanguagesLoading,
     isError: isTitleInLanguagesError,
     data: titleInLanguages,
   } = useTitleinLanguages(language, title, getLanguageValues(languages));
+  const {
+    isLoading: isMonthlyViewsLoading,
+    isError: isMonthlyViewsError,
+    data: titleMonthlyViews,
+  } = useMonthlyViews(language, title, month, year);
+  const destinationsMonthlyViews = useMultipleMonthlyViews(
+    language,
+    getTitles(destinations?.slice(0, 20)),
+    month,
+    year
+  );
+  const isDestMonthlyViewsLoading = destinationsMonthlyViews.some(({ isLoading }) => isLoading);
+  const isDestMonthlyViewsError = destinationsMonthlyViews.some(({ isError }) => isError);
   const [selectedOptions, setSelectedOptions] = useState();
   const [limit, setLimit] = useState(10);
   const [showRealNumbers, setShowRealNumbers] = useState(false);
@@ -80,11 +96,11 @@ const LanguageComparison = () => {
 
   useEffect(() => setSelectedOptions([]), [language, title]);
 
-  if (isSourcesLoading || isDestinationsLoading || isTitleInLanguagesLoading) {
+  if (isSourcesLoading || isDestinationsLoading || isTitleInLanguagesLoading || isMonthlyViewsLoading || isDestMonthlyViewsLoading) {
     return <Loader />;
   }
 
-  if (isSourcesError || isDestinationsError || isTitleInLanguagesError) {
+  if (isSourcesError || isDestinationsError || isTitleInLanguagesError || isMonthlyViewsError || isDestMonthlyViewsError) {
     return <Error />;
   }
 
@@ -187,6 +203,7 @@ const LanguageComparison = () => {
             limit={limit}
             showRealNumbers={showRealNumbers}
             onTitleClick={handleTitleClick}
+            totalViews={titleMonthlyViews}
           />
         </div>
         <div className="barchart-label">{showRealNumbers ? 'Incoming Pageviews' : 'Percentage of Incoming Pageviews'}</div>
@@ -204,6 +221,7 @@ const LanguageComparison = () => {
             limit={limit}
             showRealNumbers={showRealNumbers}
             onTitleClick={handleTitleClick}
+            perItemViews={destinationsMonthlyViews.map(({ data }) => data)}
           />
         </div>
         <div className="barchart-label">{showRealNumbers ? 'Outgoing Pageviews' : 'Percentage of Outgoing Pageviews'}</div>

@@ -20,9 +20,11 @@ const BarChartContainer = forwardRef(({
   limit = 10,
   showRealNumbers = false,
   onTitleClick,
+  totalViews,
+  perItemViews,
 }, ref) => {
   const limitedClickstream = clickstream?.slice(0, limit);
-  const clickstreamViews = sumClickstream(clickstream);
+  const clickstreamViews = totalViews ?? sumClickstream(clickstream);
 
   // hooks for fetching data
   const clickstreamQueries = selectedOptions.map((option) => ({
@@ -41,11 +43,12 @@ const BarChartContainer = forwardRef(({
   const selectedLanguageViews = selectedLanguageClickstream.map(({ data }) =>
     sumClickstream(data)
   );
-  const chartData = limitedClickstream.map(({ title, views }) => {
+  const chartData = limitedClickstream.map(({ title, views }, itemIdx) => {
     const translations = { [language]: denormalize(title) };
+    const denominator = perItemViews ? perItemViews[itemIdx] : clickstreamViews;
     const dataPoint = {
       title: denormalize(title),
-      [language]: showRealNumbers ? (views ?? 0) : percentageOfViews(views, clickstreamViews),
+      [language]: showRealNumbers ? (views ?? 0) : percentageOfViews(views, denominator),
     };
     selectedOptions?.forEach(({ language }, idx) => {
       const titleInLanguage = selectedLanguageTitles[idx].data?.find(
