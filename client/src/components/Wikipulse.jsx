@@ -1,5 +1,6 @@
 /* eslint-disable */
 import React, { useEffect, useMemo, useRef } from 'react';
+import * as htmlToImage from 'html-to-image';
 import Plot from 'react-plotly.js';
 import axios from 'axios';
 import { useQuery } from 'react-query';
@@ -538,32 +539,16 @@ export default function WikiPulse() {
 	const handleWeeklyDownload = () => {
 		const el = weeklyRef.current;
 		if (!el) return;
-		const rect = el.getBoundingClientRect();
-		const w = Math.ceil(rect.width);
-		const h = Math.ceil(rect.height);
-		const xmlns = 'http://www.w3.org/1999/xhtml';
-		const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><foreignObject width="100%" height="100%"><div xmlns="${xmlns}">${el.outerHTML}</div></foreignObject></svg>`;
-		const svg64 = btoa(unescape(encodeURIComponent(svg)));
-		const img = new window.Image();
-		img.onload = function () {
-			const canvas = document.createElement('canvas');
-			canvas.width = w * 2;
-			canvas.height = h * 2;
-			const ctx = canvas.getContext('2d');
-			ctx.scale(2, 2);
-			ctx.fillStyle = '#fff';
-			ctx.fillRect(0, 0, w, h);
-			ctx.drawImage(img, 0, 0, w, h);
-			canvas.toBlob(function (blob) {
-				const url = URL.createObjectURL(blob);
+		htmlToImage.toPng(el, { backgroundColor: '#fff', pixelRatio: 2 })
+			.then(function (dataUrl) {
 				const a = document.createElement('a');
-				a.href = url;
+				a.href = dataUrl;
 				a.download = 'weekly_pulse.png';
 				a.click();
-				URL.revokeObjectURL(url);
-			}, 'image/png');
-		};
-		img.src = 'data:image/svg+xml;base64,' + svg64;
+			})
+			.catch(function (error) {
+				console.error('Download failed', error);
+			});
 	};
 
 	return (

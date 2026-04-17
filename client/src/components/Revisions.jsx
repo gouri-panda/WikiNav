@@ -343,17 +343,16 @@ export default function WikiLanguageViz() {
                 return;
             }
 
-            const hasLanguageFailure = languageResults.some(({ stats }) => !stats);
             const results = languageResults
                 .map(({ stats }) => stats)
                 .filter(Boolean);
 
             setData((prev) => {
-                // Keep current graph visible when adding/removing languages causes partial failures.
-                if (hasLanguageFailure && prev.length > 0) {
-                    return prev;
-                }
-                return results;
+                const newResultsMap = Object.fromEntries(results.map(d => [d.lang, d]));
+                const merged = selected
+                    .map(lang => newResultsMap[lang] || prev.find(d => d.lang === lang))
+                    .filter(Boolean);
+                return merged;
             });
         } finally {
             if (requestId === loadRequestRef.current) {
